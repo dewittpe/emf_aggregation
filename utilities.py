@@ -16,7 +16,7 @@ def json_to_df(path = None, data = None):
         A pandas DataFrame
     """
 
-    assert bool(data is not None) ^ bool(data is not None)
+    assert bool(data is not None) ^ bool(path is not None)
 
     if path is not None:
         if path.endswith(".gz"):
