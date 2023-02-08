@@ -1,0 +1,7 @@
+name: emf_aggregation
+channels:
+  - defaults
+dependencies:
+  - pyarrow
+  - numpy
+  - pandas
