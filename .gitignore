@@ -1,3 +1,3 @@
 __pycache__/*
 *.parquet
-mseg_res_com_emm.json
+*.json
