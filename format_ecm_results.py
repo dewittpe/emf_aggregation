@@ -15,18 +15,27 @@ from utilities import YEARS
 from utilities import OUTCOME_METRICS
 from utilities import DEFINED_VALUES
 
+################################################################################
 # Read in the baseline data and format as a DataFrame
+print("reading in ecm_results_1-1.json")
 DF1 = json_to_df(path = 'ecm_results_1-1.json')
+print("reading in ecm_results_2.json")
 DF2 = json_to_df(path = 'ecm_results_2.json')
+print("reading in ecm_results_3-1.json")
 DF3 = json_to_df(path = 'ecm_results_3-1.json')
 
+print("Building one data set from all result files")
 DF = pd.concat([DF1, DF2, DF3],
                keys = ["ecm_results_1-1", "ecm_results_2", "ecm_results_3-1"])
 DF = DF.reset_index(level = 0, names = ["result_file"])
+del DF1
+del DF2
+del DF3
 
 ################################################################################
 # We Need to split DF into several different sets
 
+print("Split results by concept:")
 queries = {
         'OnSiteGenerationByCategory': 'lvl0 == "On-site Generation" & lvl2 == "By Category"',
         'OnSiteGenerationOverall': 'lvl0 == "On-site Generation" & lvl2 == "Overall"',
@@ -36,19 +45,36 @@ queries = {
         'MarketsSavingsOverall': 'lvl1 == "Markets and Savings (Overall)"',
         }
 
-
+print("  OnSiteGenerationByCategory")
 OnSiteGenerationByCategory = DF.query(queries["OnSiteGenerationByCategory"]).copy()
-OnSiteGenerationOverall    = DF.query(queries["OnSiteGenerationOverall"]).copy()
-FinancialMetrics           = DF.query(queries["FinancialMetrics"]).copy()
-MarketsSavingsByCategory   = DF.query(queries["MarketsSavingsByCategory"]).copy()
-MarketsSavingsOverall      = DF.query(queries["MarketsSavingsOverall"]).copy()
-FilterVariables            = DF.query(queries["FilterVariables"]).copy()
+OnSiteGenerationByCategory = OnSiteGenerationByCategory.reset_index(drop = True)
+
+print("  OnSiteGenerationOverall")
+OnSiteGenerationOverall = DF.query(queries["OnSiteGenerationOverall"]).copy()
+OnSiteGenerationOverall = OnSiteGenerationOverall.reset_index(drop = True)
+
+print("  FinancialMetrics")
+FinancialMetrics = DF.query(queries["FinancialMetrics"]).copy()
+FinancialMetrics = FinancialMetrics.reset_index(drop = True)
+
+print("  MarketsSavingsByCategory")
+MarketsSavingsByCategory = DF.query(queries["MarketsSavingsByCategory"]).copy()
+MarketsSavingsByCategory = MarketsSavingsByCategory.reset_index(drop = True)
+
+print("  MarketsSavingsOverall")
+MarketsSavingsOverall = DF.query(queries["MarketsSavingsOverall"]).copy()
+MarketsSavingsOverall = MarketsSavingsOverall.reset_index(drop = True)
+
+print("  FilterVariables")
+FilterVariables = DF.query(queries["FilterVariables"]).copy()
+FilterVariables = FilterVariables.reset_index(drop = True)
 
 # verify all rows of DF have been accounted for.  A set of anti joins here is
 # useful, but can take a bit of time to compute.  To reduce overall
 # computational time try to do the anti joins in order of the largest (most
 # rows) to smallest (fewest rows) of the noted sets.
 
+print("verifying all rows in the results are accounted for")
 d = DF.copy()
 d.shape
 
@@ -99,6 +125,7 @@ FilterVariables            = remove_empty_colums(FilterVariables)
 
 ########################################
 # On-site Generation By Category
+print("Cleaning up OnSiteGenerationByCategory")
 if (OnSiteGenerationByCategory.lvl0 == "On-site Generation").all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.drop(columns = "lvl0")
 
@@ -125,6 +152,7 @@ assert ~OnSiteGenerationByCategory.columns.str.match("lvl").any(),\
 
 ########################################
 # On-site Generation Overall
+print("Cleaning up OnSiteGenerationOverall")
 if (OnSiteGenerationOverall.lvl0 == "On-site Generation").all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.drop(columns = "lvl0")
 
@@ -145,6 +173,7 @@ assert ~OnSiteGenerationOverall.columns.str.match("lvl").any(),\
 
 ########################################
 # FinancialMetrics
+print("Cleaning up FinancialMetrics")
 if FinancialMetrics.lvl0.isin(ECMS).all():
     FinancialMetrics = FinancialMetrics.rename(columns = {"lvl0" : "ecm"})
 
@@ -164,6 +193,7 @@ assert ~FinancialMetrics.columns.str.match("lvl").any(),\
 
 ########################################
 # MarketsSavingsByCategory
+print("Cleaning up MarketsSavingsByCategory")
 if MarketsSavingsByCategory.lvl0.isin(ECMS).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl0" : "ecm"})
 
@@ -185,7 +215,15 @@ if MarketsSavingsByCategory.lvl5.isin(BUILDING_TYPES).all():
 if MarketsSavingsByCategory.lvl6.isin(END_USES).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl6": "end_use"})
 
-if MarketsSavingsByCategory.lvl7.isin(FUEL_TYPES).all():
+# there are some rows with no fuel_type, lvl7 has year values.  move the year
+# and values
+MarketsSavingsByCategory.query('lvl7.isin(@YEARS)')
+idx = MarketsSavingsByCategory.query('lvl7.isin(@YEARS)').index
+MarketsSavingsByCategory.loc[idx, "lvl9"] = MarketsSavingsByCategory.loc[idx, "lvl8"]
+MarketsSavingsByCategory.loc[idx, "lvl8"] = MarketsSavingsByCategory.loc[idx, "lvl7"]
+MarketsSavingsByCategory.loc[idx, "lvl7"] = pd.NA
+
+if MarketsSavingsByCategory.lvl7.isin(FUEL_TYPES + [pd.NA]).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl7": "fuel_type"})
 
 if MarketsSavingsByCategory.lvl8.isin(YEARS).all():
@@ -198,6 +236,7 @@ assert ~MarketsSavingsByCategory.columns.str.match("lvl").any(),\
 
 ########################################
 # MarketsSavingsOverall
+print("Cleaning up MarketsSavingsOverall")
 if MarketsSavingsOverall.lvl0.isin(ECMS).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl0" : "ecm"})
 
@@ -220,6 +259,7 @@ assert ~MarketsSavingsOverall.columns.str.match("lvl").any(),\
 
 ########################################
 # FilterVariables
+print("Cleaning up FilterVariables")
 if FilterVariables.lvl0.isin(ECMS).all():
     FilterVariables = FilterVariables.rename(columns = {"lvl0" : "ecm"})
 
@@ -233,6 +273,7 @@ assert ~FilterVariables.columns.str.match("lvl").any(),\
 
 ################################################################################
 # Output
+print("Writting parquet files")
 
 OnSiteGenerationByCategory.to_parquet('OnSiteGenerationByCategory.parquet')
 OnSiteGenerationOverall.to_parquet('OnSiteGenerationOverall.parquet')

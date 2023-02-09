@@ -219,6 +219,9 @@ REGIONS = [
         ]
 
 BUILDING_TYPES = [
+        'Retail', 'Assembly/Other', 'Warehouses', 'Multi Family Homes',
+        'Education', 'Large Offices', 'Single Family Homes',
+        'Small/Medium Offices', 'Hospitality', 'Hospitals',
         'single family home',
         'multi family home',
         'mobile home',
@@ -237,13 +240,22 @@ BUILDING_TYPES = [
         ]
 
 FUEL_TYPES = [
-        'electricity',
-        'natural gas',
-        'distillate',
+        'electricity', 'Electric',
+        'natural gas', 'Natural Gas', 'Propane',
+        'distillate', 'Distillate/Other', 'Biomass',
         'other fuel'
         ]
 
 END_USES = [
+        'Water Heating',
+        'Other',
+        'Cooking',
+        'Refrigeration',
+        'Ventilation',
+        'Heating (Equip.)',
+        'Cooling (Equip.)',
+        'Computers and Electronics',
+        'Lighting',
         'heating',
         'cooling',
         'lighting',
@@ -422,13 +434,25 @@ TECHNOLOGIES = [
     ]
 
 OUTCOME_METRICS = [
+        'Avoided CO\u2082 Emissions (MMTons)', #'Avoided CO₂ Emissions (MMTons)',
+        'Baseline CO\u2082 Cost (USD)', #'Baseline CO₂ Cost (USD)',
+        'Baseline CO\u2082 Emissions (MMTons)', #'Baseline CO₂ Emissions (MMTons)',
+        'Baseline Energy Use (MMBtu)',
+        'Baseline Energy Cost (USD)',
+        'CO\u2082 Cost Savings (USD)', #'CO₂ Cost Savings (USD)',
         'CO\u2082 Emissions (MMTons)', # CO₂ Emissions (MMTons)
+        'Cost of Conserved CO\u2082 ($/MTon CO\u2082 avoided)', #'Cost of Conserved CO₂ ($/MTon CO₂ avoided)'
+        'Cost of Conserved Energy ($/MMBtu saved)',
+        'Efficient CO\u2082 Cost (USD)', #'Efficient CO₂ Cost (USD)',
+        'Efficient CO\u2082 Emissions (MMTons)', #'Efficient CO₂ Emissions (MMTons)',
+        'Efficient Energy Cost (USD)',
+        'Efficient Energy Use (MMBtu)',
         'Energy (MMBtu)',
         'Energy Cost (USD)',
+        'Energy Cost Savings (USD)',
+        'Energy Savings (MMBtu)',
         'IRR (%)',
-        'Cost of Conserved Energy ($/MMBtu saved)',
-        'Payback (years)',
-        'Cost of Conserved CO₂ ($/MTon CO\u2082 avoided)' #'Cost of Conserved CO₂ ($/MTon CO₂ avoided)'
+        'Payback (years)'
         ]
 
 YEARS = [str(x) for x in range(2000, 2100)]
