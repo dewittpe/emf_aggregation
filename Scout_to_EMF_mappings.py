@@ -113,32 +113,160 @@ EMF_END_USES = pd.DataFrame([
     ])
 
 EMF_DIRECT_INDIRECT_FUEL = pd.DataFrame([
-    {"scout_fuel_type": "Natural Gas",     "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "natural gas",     "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "Distillate/Other","emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "distillate",      "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "Biomass",         "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "Propane",         "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "Electric",        "emf_direct_indirect_fuel": "Indirect"},
-    {"scout_fuel_type": "electricity",     "emf_direct_indirect_fuel": "Indirect"},
-    {"scout_fuel_type": "Non-Electric",    "emf_direct_indirect_fuel": "Direct"},
-    {"scout_fuel_type": "other fuel",      "emf_direct_indirect_fuel": "Direct"}
+    {'scout_fuel_type': 'Natural Gas',     'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'natural gas',     'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'Distillate/Other','emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'distillate',      'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'Biomass',         'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'Propane',         'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'Electric',        'emf_direct_indirect_fuel': 'Indirect'},
+    {'scout_fuel_type': 'electricity',     'emf_direct_indirect_fuel': 'Indirect'},
+    {'scout_fuel_type': 'Non-Electric',    'emf_direct_indirect_fuel': 'Direct'},
+    {'scout_fuel_type': 'other fuel',      'emf_direct_indirect_fuel': 'Direct'}
     ])
 
 EMF_FUEL_TYPE = pd.DataFrame([
-    {'scout_split_fuel': "other fuel", "scout_end_use": "heating",            'scout_technology': "furnace (LPG)",                "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_propane},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "heating",            'scout_technology': "furnace (kerosene)",           "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_kerosene},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "heating",            'scout_technology': "stove (wood)",                 "emf_fuel_type": "Biomass Solids",  "EJ_to_mt_CO2": EJ_to_mt_co2_bio},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "secondary heating",  'scout_technology': "secondary heater (wood)",      "emf_fuel_type": "Biomass Solids",  "EJ_to_mt_CO2": EJ_to_mt_co2_bio},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "secondary heating",  'scout_technology': "secondary heater (coal)",      "emf_fuel_type": "Biomass Solids",  "EJ_to_mt_CO2": EJ_to_mt_co2_bio},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "secondary heating",  'scout_technology': "secondary heater (kerosene)",  "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_kerosene},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "secondary heating",  'scout_technology': "secondary heater (LPG)",       "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_propane},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "water heating",      'scout_technology': pd.NA,                          "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_oil},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "cooking",            'scout_technology': pd.NA,                          "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_oil},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "drying",             'scout_technology': pd.NA,                          "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_oil},
-    {'scout_split_fuel': "other fuel", "scout_end_use": "other",              'scout_technology': pd.NA,                          "emf_fuel_type": "Oil",             "EJ_to_mt_CO2": EJ_to_mt_co2_oil}
+    {
+        'scout_fuel_type': 'Natural Gas',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Gas',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_gas
+    },
+    {
+        'scout_fuel_type': 'natural gas',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Gas',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_gas
+    },
+    {
+        'scout_fuel_type': 'Propane',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_propane
+    },
+    {
+        'scout_fuel_type': 'Distillate/Other',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'distillate',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'Biomass',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Biomass Solids',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'Electric',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Electricity',
+        'EJ_to_mt_CO2': EJ_to_twh
+    },
+    {
+        'scout_fuel_type': 'Electricity',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Electricity',
+        'EJ_to_mt_CO2': EJ_to_twh
+    },
+    {
+        'scout_fuel_type': 'electricity',
+        'scout_end_use': pd.NA,
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Electricity',
+        'EJ_to_mt_CO2': EJ_to_twh
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'heating',
+        'scout_technology': 'furnace (LPG)',
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_propane
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'heating',
+        'scout_technology': 'furnace (kerosene)',
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_kerosene
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'heating',
+        'scout_technology': 'stove (wood)',
+        'emf_fuel_type': 'Biomass Solids',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_bio
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'secondary heating',
+        'scout_technology': 'secondary heater (wood)',
+        'emf_fuel_type': 'Biomass Solids',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_bio
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'secondary heating',
+        'scout_technology': 'secondary heater (coal)',
+        'emf_fuel_type': 'Biomass Solids',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_bio
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'secondary heating',
+        'scout_technology': 'secondary heater (kerosene)',
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_kerosene
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'secondary heating',
+        'scout_technology': 'secondary heater (LPG)',
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_propane
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'water heating',
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'cooking',
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'drying',
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    },
+    {
+        'scout_fuel_type': 'other fuel',
+        'scout_end_use': 'other',
+        'scout_technology': pd.NA,
+        'emf_fuel_type': 'Oil',
+        'EJ_to_mt_CO2': EJ_to_mt_co2_oil
+    }
     ])
-
 
 
 def main():
