@@ -127,11 +127,19 @@ grps = [
         ["region", "building_class", "emf_end_use", "emf_fuel_type", "year"]
         ]
 
-baseline_energy_aggs = [ baseline.groupby(g).agg({"EJ":"sum"}).reset_index() for g in grps ]
+baseline_energy_aggs = [
+        baseline
+        .groupby(g)
+        .agg({"EJ":"sum"})
+        .rename({"EJ":"value"}, axis = 1)
+        .reset_index()
+        for g in grps
+        ]
+
 baseline_energy_aggs = pd.concat(baseline_energy_aggs)
 
 baseline_energy_aggs["emf_string"] = (
-        baseline_energy_aggs.region + "*Final Energy|Buildings" + 
+        baseline_energy_aggs.region + "*Final Energy|Buildings" +
         "|" + baseline_energy_aggs.building_class.fillna("") +
         "|" + baseline_energy_aggs.emf_end_use.fillna("") +
         "|" + baseline_energy_aggs.emf_fuel_type.fillna("")
@@ -150,11 +158,19 @@ grps = [
     ["region", "building_class", "emf_end_use", "emf_direct_indirect_fuel", "year"]
         ]
 
-baseline_emission_aggs = [ baseline.groupby(g).agg({"CO2":"sum"}).reset_index() for g in grps ]
+baseline_emission_aggs = [
+        baseline
+        .groupby(g)
+        .agg({"CO2":"sum"})
+        .rename({"CO2":"value"}, axis = 1)
+        .reset_index()
+        for g in grps
+        ]
+
 baseline_emission_aggs = pd.concat(baseline_emission_aggs)
 
 baseline_emission_aggs["emf_string"] = (
-        baseline_emission_aggs.region + "*Final Energy|Buildings" + 
+        baseline_emission_aggs.region + "*Final Energy|Buildings" +
         "|" + baseline_emission_aggs.building_class.fillna("") +
         "|" + baseline_emission_aggs.emf_end_use.fillna("") +
         "|" + baseline_emission_aggs.emf_direct_indirect_fuel.fillna("")
@@ -163,8 +179,24 @@ baseline_emission_aggs["emf_string"] = (
 timer.toc()
 
 timer.tic("Concat Baseline aggregations, transform and write out")
+
 baseline_agg = pd.concat([baseline_energy_aggs, baseline_emission_aggs])
-print(baseline_agg)
+baseline_agg = baseline_agg[["emf_string", "year", "value"]]
+
+baseline_agg_wide = (
+        baseline_agg.astype({'year':'str'})
+        .pivot_table(
+            index = ["emf_string"],
+            columns = ["year"],
+            values = ["value"]
+            )
+        )
+
+baseline_agg_wide.columns = baseline_agg_wide.columns.droplevel(0)
+baseline_agg_wide = baseline_agg_wide.reset_index()
+baseline_agg_wide.to_csv("baseline_agg_wide.csv", index = False)
+baseline_agg.to_csv("baseline_agg.csv", index = False)
+
 timer.toc()
 
 timer.toc()
