@@ -1,3 +1,5 @@
+import pandas as pd
+
 class ScoutConcepts():
     def __init__(self):
         self.scenarios = ["Max adoption potential", "Technical adoption potential"]
@@ -398,4 +400,61 @@ class ScoutConcepts():
                 self.regions + self.building_types + self.fuel_types + self.end_uses +
                 self.supply_demand + self.energy_stock + self.technologies + self.years
                 )
+
+class ScoutMappings():
+    def __init__(self):
+        self.building_classes = pd.DataFrame(
+                [
+                    {
+                        'building_class0': 'Commercial (New)',
+                        'structure_type': 'New',
+                        'building_class': 'Commercial'
+                     },
+                    {
+                        'building_class0': 'Commercial (Existing)',
+                        'structure_type': 'Existing',
+                        'building_class': 'Commercial'
+                     },
+                    {
+                        'building_class0': 'Residential (New)',
+                        'structure_type': 'New',
+                        'building_class': 'Residential'
+                     },
+                    {
+                        'building_class0': 'Residential (Existing)',
+                        'structure_type': 'Existing',
+                        'building_class': 'Residential'
+                     }
+                ]
+                )
+
+        self.building_type_class = pd.DataFrame(
+                [
+                    {'building_type' : 'Assembly/Other',      'building_class': 'Commercial'},
+                    {'building_type': 'Education',            'building_class': 'Commercial'},
+                    {'building_type': 'Hospitality',          'building_class': 'Commercial'},
+                    {'building_type': 'Hospitals',            'building_class': 'Commercial'},
+                    {'building_type': 'Large Offices',        'building_class': 'Commercial'},
+                    {'building_type': 'Multi Family Homes',   'building_class': 'Residential'},
+                    {'building_type': 'Retail',               'building_class': 'Commercial'},
+                    {'building_type': 'Single Family Homes',  'building_class': 'Residential'},
+                    {'building_type': 'Small/Medium Offices', 'building_class': 'Commercial'},
+                    {'building_type': 'Warehouse',            'building_class': 'Commercial'},
+                    {'building_type': 'assembly',           'building_class': 'Commercial'},
+                    {'building_type': 'education',          'building_class': 'Commercial'},
+                    {'building_type': 'food sales',         'building_class': 'Commercial'},
+                    {'building_type': 'food service',       'building_class': 'Commercial'},
+                    {'building_type': 'health care',        'building_class': 'Commercial'},
+                    {'building_type': 'lodging',            'building_class': 'Commercial'},
+                    {'building_type': 'large office',       'building_class': 'Commercial'},
+                    {'building_type': 'small office',       'building_class': 'Commercial'},
+                    {'building_type': 'mercantile/service', 'building_class': 'Commercial'},
+                    {'building_type': 'warehouse',          'building_class': 'Commercial'},
+                    {'building_type': 'other',              'building_class': 'Commercial'},
+                    {'building_type': 'unspecified',        'building_class': 'Commercial'},
+                    {'building_type': 'single family home', 'building_class': 'Residential'},
+                    {'building_type': 'multi family home',  'building_class': 'Residential'},
+                    {'building_type': 'mobile home',        'building_class': 'Residential'},
+                    {'building_type': 'Mobile Homes',       'building_class': 'Residential'}
+                ])
 
