@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+import numpy as np
 
 ################################################################################
 def json_to_df(path = None, data = None):
@@ -554,3 +555,19 @@ def whats_in_a_series(x, print_unknowns = False):
     return rtn
 
 
+################################################################################
+def five_number_summary(x, ignorenan = False):
+    if ignorenan:
+        qs = np.nanpercentile(x, [25, 50, 75])
+        mn = np.nanmin(x)
+        mx = np.nanmax(x)
+    else:
+        qs = np.percentile(x, [25, 50, 75])
+        mn = np.min(x)
+        mx = np.max(x)
+    return {"Min" : mn, "Q1" : qs[0], "Median" : qs[1], "Q3" : qs[2], "Max" : mx}
+
+def fns(x, ignorenan = False):
+    y = five_number_summary(x, ignorenan)
+    for k,v in y.items():
+        print((k+":").ljust(8) + f"{v:.4e}")

@@ -8,7 +8,10 @@ PARQUETS += FinancialMetrics.parquet
 
 .PHONY : all clean
 
-all : $(PARQUETS)
+all : by_category_vs_overall.log
+
+%.log : %.py $(PARQUETS)
+	python $<
 
 baseline.parquet : format_baseline.py utilities.py mseg_res_com_emm.json
 	python $<

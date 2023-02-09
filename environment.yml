@@ -5,3 +5,4 @@ dependencies:
   - pyarrow
   - numpy
   - pandas
+  - matplotlib
