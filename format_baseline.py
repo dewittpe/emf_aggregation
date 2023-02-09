@@ -11,10 +11,16 @@ from utilities import ENERGY_STOCK
 from utilities import TECHNOLOGIES
 from utilities import YEARS
 from utilities import DEFINED_VALUES
+from timer import Timer
 
-# Read in the baseline data and format as a DataFrame
+timer = Timer()
+timer.tic("Process mseg_res_com_emm.json to a columized data form")
+
+timer.tic("Read in the baseline data and format as a DataFrame")
 DF = json_to_df(path = 'mseg_res_com_emm.json')
+timer.toc()
 
+timer.tic(task = "Explore and clean the data set")
 # explore the columns and get good names
 DF.query("lvl8.notna()").lvl0.value_counts() # likely region
 DF.query("lvl8.notna()").lvl1.value_counts() # likely building_type
@@ -100,7 +106,9 @@ DF.loc[idx, "supply_demand"] = pd.NA
 # There are "NA" values in the year column
 DF.loc[DF.query('year == "NA"').index, "year"] = pd.NA
 
-# Check the column contents
+timer.toc()
+
+timer.tic(task = "Check the column contents")
 if not DF.region.isin(REGIONS).all():
     raise Exception("DF.region contains more than just expected region values")
 
@@ -132,11 +140,16 @@ if not DF.value.apply(isfloat).all():
     if not DF[~DF.value.isna()].value.apply(isfloat).all():
         raise Exception("DF.value contains more than just expected floating point values")
 
+timer.toc()
+
 # The year and the value columns can/should have the dtype changed to integer
 # and float respectively.  There is a string value "NA" in the year column that
 # needs to be modified first
 DF.year = DF.year.astype("Int64")
 DF.value = pd.to_numeric(DF.value)
 
+timer.tic("Write baseline.parquet")
 DF.to_parquet('baseline.parquet')
+timer.toc()
+timer.toc()
 

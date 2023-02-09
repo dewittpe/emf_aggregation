@@ -14,28 +14,38 @@ from utilities import TECHNOLOGIES
 from utilities import YEARS
 from utilities import OUTCOME_METRICS
 from utilities import DEFINED_VALUES
+from timer import Timer
+
+timer = Timer()
+timer.tic("Process ecm_results_1-1.json, ecm_results_2.json, and ecm_results_3-1.json")
 
 ################################################################################
 # Read in the baseline data and format as a DataFrame
-print("reading in ecm_results_1-1.json")
+timer.tic("Read in json files and formate as one DataFrame")
+timer.tic("reading in ecm_results_1-1.json")
 DF1 = json_to_df(path = 'ecm_results_1-1.json')
-print("reading in ecm_results_2.json")
+timer.toc()
+timer.tic("reading in ecm_results_2.json")
 DF2 = json_to_df(path = 'ecm_results_2.json')
-print("reading in ecm_results_3-1.json")
+timer.toc()
+timer.tic("reading in ecm_results_3-1.json")
 DF3 = json_to_df(path = 'ecm_results_3-1.json')
+timer.toc()
 
-print("Building one data set from all result files")
+timer.tic("Building one data set from all result files")
 DF = pd.concat([DF1, DF2, DF3],
                keys = ["ecm_results_1-1", "ecm_results_2", "ecm_results_3-1"])
 DF = DF.reset_index(level = 0, names = ["result_file"])
 del DF1
 del DF2
 del DF3
+timer.toc()
+timer.toc()
 
 ################################################################################
 # We Need to split DF into several different sets
 
-print("Split results by concept:")
+timer.tic("Split results by concept:")
 queries = {
         'OnSiteGenerationByCategory': 'lvl0 == "On-site Generation" & lvl2 == "By Category"',
         'OnSiteGenerationOverall': 'lvl0 == "On-site Generation" & lvl2 == "Overall"',
@@ -45,36 +55,42 @@ queries = {
         'MarketsSavingsOverall': 'lvl1 == "Markets and Savings (Overall)"',
         }
 
-print("  OnSiteGenerationByCategory")
+timer.tic("OnSiteGenerationByCategory")
 OnSiteGenerationByCategory = DF.query(queries["OnSiteGenerationByCategory"]).copy()
 OnSiteGenerationByCategory = OnSiteGenerationByCategory.reset_index(drop = True)
+timer.toc()
 
-print("  OnSiteGenerationOverall")
+timer.tic("OnSiteGenerationOverall")
 OnSiteGenerationOverall = DF.query(queries["OnSiteGenerationOverall"]).copy()
 OnSiteGenerationOverall = OnSiteGenerationOverall.reset_index(drop = True)
+timer.toc()
 
-print("  FinancialMetrics")
+timer.tic("FinancialMetrics")
 FinancialMetrics = DF.query(queries["FinancialMetrics"]).copy()
 FinancialMetrics = FinancialMetrics.reset_index(drop = True)
+timer.toc()
 
-print("  MarketsSavingsByCategory")
+timer.tic("MarketsSavingsByCategory")
 MarketsSavingsByCategory = DF.query(queries["MarketsSavingsByCategory"]).copy()
 MarketsSavingsByCategory = MarketsSavingsByCategory.reset_index(drop = True)
+timer.toc()
 
-print("  MarketsSavingsOverall")
+timer.tic("MarketsSavingsOverall")
 MarketsSavingsOverall = DF.query(queries["MarketsSavingsOverall"]).copy()
 MarketsSavingsOverall = MarketsSavingsOverall.reset_index(drop = True)
+timer.toc()
 
-print("  FilterVariables")
+timer.tic("FilterVariables")
 FilterVariables = DF.query(queries["FilterVariables"]).copy()
 FilterVariables = FilterVariables.reset_index(drop = True)
+timer.toc()
 
 # verify all rows of DF have been accounted for.  A set of anti joins here is
 # useful, but can take a bit of time to compute.  To reduce overall
 # computational time try to do the anti joins in order of the largest (most
 # rows) to smallest (fewest rows) of the noted sets.
 
-print("verifying all rows in the results are accounted for")
+timer.tic("verifying all rows in the results are accounted for")
 d = DF.copy()
 d.shape
 
@@ -104,12 +120,14 @@ d.shape
 
 assert d.shape == (0, 11), "Not all rows in DF have been accounted for"
 del d
+timer.toc()
+timer.toc()
 
 ################################################################################
-# Clean up the DataFrames
+timer.tic("Clean up the DataFrames")
 
 ########################################
-# remove columns that have no data
+timer.tic("remove columns that have no data")
 def remove_empty_colums(df):
     for c in df.columns:
         if df[c].isna().all():
@@ -123,9 +141,11 @@ MarketsSavingsByCategory   = remove_empty_colums(MarketsSavingsByCategory)
 MarketsSavingsOverall      = remove_empty_colums(MarketsSavingsOverall)
 FilterVariables            = remove_empty_colums(FilterVariables)
 
+timer.toc()
+
 ########################################
 # On-site Generation By Category
-print("Cleaning up OnSiteGenerationByCategory")
+timer.tic("Cleaning up OnSiteGenerationByCategory")
 if (OnSiteGenerationByCategory.lvl0 == "On-site Generation").all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.drop(columns = "lvl0")
 
@@ -150,9 +170,11 @@ if OnSiteGenerationByCategory.lvl5.isin(YEARS).all():
 assert ~OnSiteGenerationByCategory.columns.str.match("lvl").any(),\
         "A column in OnSiteGenerationByCategory has not been mapped to a conceptual construct"
 
+timer.toc()
+
 ########################################
 # On-site Generation Overall
-print("Cleaning up OnSiteGenerationOverall")
+timer.tic("Cleaning up OnSiteGenerationOverall")
 if (OnSiteGenerationOverall.lvl0 == "On-site Generation").all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.drop(columns = "lvl0")
 
@@ -171,9 +193,11 @@ if OnSiteGenerationOverall.lvl3.isin(YEARS).all():
 assert ~OnSiteGenerationOverall.columns.str.match("lvl").any(),\
         "A column in OnSiteGenerationOverall has not been mapped to a conceptual construct"
 
+timer.toc()
+
 ########################################
 # FinancialMetrics
-print("Cleaning up FinancialMetrics")
+timer.tic("Cleaning up FinancialMetrics")
 if FinancialMetrics.lvl0.isin(ECMS).all():
     FinancialMetrics = FinancialMetrics.rename(columns = {"lvl0" : "ecm"})
 
@@ -191,9 +215,11 @@ if FinancialMetrics.lvl3.isin(YEARS).all():
 assert ~FinancialMetrics.columns.str.match("lvl").any(),\
         "A column in FinancialMetrics has not been mapped to a conceptual construct"
 
+timer.toc()
+
 ########################################
 # MarketsSavingsByCategory
-print("Cleaning up MarketsSavingsByCategory")
+timer.tic("Cleaning up MarketsSavingsByCategory")
 if MarketsSavingsByCategory.lvl0.isin(ECMS).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl0" : "ecm"})
 
@@ -234,9 +260,11 @@ if MarketsSavingsByCategory.lvl8.isin(YEARS).all():
 assert ~MarketsSavingsByCategory.columns.str.match("lvl").any(),\
         "A column in MarketsSavingsByCategory has not been mapped to a conceptual construct"
 
+timer.toc()
+
 ########################################
 # MarketsSavingsOverall
-print("Cleaning up MarketsSavingsOverall")
+timer.tic("Cleaning up MarketsSavingsOverall")
 if MarketsSavingsOverall.lvl0.isin(ECMS).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl0" : "ecm"})
 
@@ -257,9 +285,11 @@ if MarketsSavingsOverall.lvl4.isin(YEARS).all():
 assert ~MarketsSavingsOverall.columns.str.match("lvl").any(),\
         "A column in MarketsSavingsOverall has not been mapped to a conceptual construct"
 
+timer.toc()
+
 ########################################
 # FilterVariables
-print("Cleaning up FilterVariables")
+timer.tic("Cleaning up FilterVariables")
 if FilterVariables.lvl0.isin(ECMS).all():
     FilterVariables = FilterVariables.rename(columns = {"lvl0" : "ecm"})
 
@@ -271,9 +301,12 @@ FilterVariables = FilterVariables.rename(columns = {"lvl2": "concept", "lvl3": "
 assert ~FilterVariables.columns.str.match("lvl").any(),\
         "A column in FilterVariables has not been mapped to a conceptual construct"
 
+timer.toc()
+timer.toc()
+
 ################################################################################
 # Output
-print("Writting parquet files")
+timer.tic("Writting parquet files")
 
 OnSiteGenerationByCategory.to_parquet('OnSiteGenerationByCategory.parquet')
 OnSiteGenerationOverall.to_parquet('OnSiteGenerationOverall.parquet')
@@ -282,6 +315,11 @@ MarketsSavingsOverall.to_parquet('MarketsSavingsOverall.parquet')
 FilterVariables.to_parquet('FilterVariables.parquet')
 FinancialMetrics.to_parquet('FinancialMetrics.parquet')
 
+timer.toc()
 
-
+################################################################################
+timer.toc()
+################################################################################
+#                                 End of File                                  #
+################################################################################
 

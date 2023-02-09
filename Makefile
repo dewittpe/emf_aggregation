@@ -8,16 +8,19 @@ PARQUETS += FinancialMetrics.parquet
 
 .PHONY : all clean
 
-all : by_category_vs_overall.log
+all: by_category_vs_overall.log
 
-%.log : %.py $(PARQUETS)
+%.log: %.py $(PARQUETS)
 	python $<
 
-baseline.parquet : format_baseline.py utilities.py mseg_res_com_emm.json
+baseline.parquet: format_baseline.py utilities.py mseg_res_com_emm.json
 	python $<
 
 OnSiteGenerationByCategory.parquet OnSiteGenerationOverall.parquet MarketsSavingsByCategory.parquet MarketsSavingsOverall.parquet FilterVariables.parquet FinancialMetrics.parquet &: format_ecm_results.py utilities.py ecm_results_1-1.json ecm_results_2.json ecm_results_3-1.json
 	python $<
 
-%.json : %.json.gz
+%.json: %.json.gz
 	gunzip -dk $<
+
+clean:
+	/bin/rm -f $(PARQUETS) *.log *.json
