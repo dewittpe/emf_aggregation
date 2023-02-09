@@ -2,19 +2,10 @@ import pandas as pd
 from utilities import json_to_df
 from utilities import isfloat
 from utilities import whats_in_a_series
-from utilities import ECMS
-from utilities import SCENARIOS
-from utilities import REGIONS
-from utilities import BUILDING_TYPES
-from utilities import FUEL_TYPES
-from utilities import END_USES
-from utilities import SUPPLY_DEMAND
-from utilities import ENERGY_STOCK
-from utilities import TECHNOLOGIES
-from utilities import YEARS
-from utilities import OUTCOME_METRICS
-from utilities import DEFINED_VALUES
+from Scout_Concepts import ScoutConcepts
 from timer import Timer
+
+scout_concetps = ScoutConcepts()
 
 timer = Timer()
 timer.tic("Process ecm_results_1-1.json, ecm_results_2.json, and ecm_results_3-1.json")
@@ -149,19 +140,19 @@ timer.tic("Cleaning up OnSiteGenerationByCategory")
 if (OnSiteGenerationByCategory.lvl0 == "On-site Generation").all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.drop(columns = "lvl0")
 
-if OnSiteGenerationByCategory.lvl1.isin(OUTCOME_METRICS).all():
+if OnSiteGenerationByCategory.lvl1.isin(scout_concetps.outcome_metrics).all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.rename(columns = {"lvl1" : "outcome_metric"})
 
 if (OnSiteGenerationByCategory.lvl2 == "By Category").all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.drop(columns = "lvl2")
 
-if OnSiteGenerationByCategory.lvl3.isin(REGIONS).all():
+if OnSiteGenerationByCategory.lvl3.isin(scout_concetps.regions).all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.rename(columns = {"lvl3": "region"})
 
-if OnSiteGenerationByCategory.lvl4.isin(BUILDING_TYPES).all():
+if OnSiteGenerationByCategory.lvl4.isin(scout_concetps.building_types).all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.rename(columns = {"lvl4": "building_type"})
 
-if OnSiteGenerationByCategory.lvl5.isin(YEARS).all():
+if OnSiteGenerationByCategory.lvl5.isin(scout_concetps.years).all():
     OnSiteGenerationByCategory = OnSiteGenerationByCategory.rename(columns = {"lvl5": "year", "lvl6": "value"})
     OnSiteGenerationByCategory.year = OnSiteGenerationByCategory.year.astype("Int64")
     OnSiteGenerationByCategory.value = OnSiteGenerationByCategory.value.astype(float)
@@ -178,13 +169,13 @@ timer.tic("Cleaning up OnSiteGenerationOverall")
 if (OnSiteGenerationOverall.lvl0 == "On-site Generation").all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.drop(columns = "lvl0")
 
-if OnSiteGenerationOverall.lvl1.isin(OUTCOME_METRICS).all():
+if OnSiteGenerationOverall.lvl1.isin(scout_concetps.outcome_metrics).all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.rename(columns = {"lvl1" : "outcome_metric"})
 
 if (OnSiteGenerationOverall.lvl2 == "Overall").all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.drop(columns = "lvl2")
 
-if OnSiteGenerationOverall.lvl3.isin(YEARS).all():
+if OnSiteGenerationOverall.lvl3.isin(scout_concetps.years).all():
     OnSiteGenerationOverall = OnSiteGenerationOverall.rename(columns = {"lvl3": "year", "lvl4": "value"})
     OnSiteGenerationOverall.year = OnSiteGenerationOverall.year.astype("Int64")
     OnSiteGenerationOverall.value = OnSiteGenerationOverall.value.astype(float)
@@ -198,16 +189,16 @@ timer.toc()
 ########################################
 # FinancialMetrics
 timer.tic("Cleaning up FinancialMetrics")
-if FinancialMetrics.lvl0.isin(ECMS).all():
+if FinancialMetrics.lvl0.isin(scout_concetps.ecms).all():
     FinancialMetrics = FinancialMetrics.rename(columns = {"lvl0" : "ecm"})
 
 if (FinancialMetrics.lvl1 == "Financial Metrics").all():
     FinancialMetrics = FinancialMetrics.drop("lvl1", axis = 1)
 
-if FinancialMetrics.lvl2.isin(OUTCOME_METRICS).all():
+if FinancialMetrics.lvl2.isin(scout_concetps.outcome_metrics).all():
     FinancialMetrics = FinancialMetrics.rename(columns = {"lvl2": "outcome_metric"})
 
-if FinancialMetrics.lvl3.isin(YEARS).all():
+if FinancialMetrics.lvl3.isin(scout_concetps.years).all():
     FinancialMetrics = FinancialMetrics.rename(columns = {"lvl3": "year", "lvl4": "value"})
     FinancialMetrics.year = FinancialMetrics.year.astype("Int64")
     FinancialMetrics.value = FinancialMetrics.value.astype(float)
@@ -220,39 +211,39 @@ timer.toc()
 ########################################
 # MarketsSavingsByCategory
 timer.tic("Cleaning up MarketsSavingsByCategory")
-if MarketsSavingsByCategory.lvl0.isin(ECMS).all():
+if MarketsSavingsByCategory.lvl0.isin(scout_concetps.ecms).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl0" : "ecm"})
 
 if (MarketsSavingsByCategory.lvl1 == "Markets and Savings (by Category)").all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.drop("lvl1", axis = 1)
 
-if MarketsSavingsByCategory.lvl2.isin(SCENARIOS).all():
+if MarketsSavingsByCategory.lvl2.isin(scout_concetps.scenarios).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl2": "adoption_scenario"})
 
-if MarketsSavingsByCategory.lvl3.isin(OUTCOME_METRICS).all():
+if MarketsSavingsByCategory.lvl3.isin(scout_concetps.outcome_metrics).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl3": "outcome_metric"})
 
-if MarketsSavingsByCategory.lvl4.isin(REGIONS).all():
+if MarketsSavingsByCategory.lvl4.isin(scout_concetps.regions).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl4": "region"})
 
-if MarketsSavingsByCategory.lvl5.isin(BUILDING_TYPES).all():
+if MarketsSavingsByCategory.lvl5.isin(scout_concetps.building_types).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl5": "building_type"})
 
-if MarketsSavingsByCategory.lvl6.isin(END_USES).all():
+if MarketsSavingsByCategory.lvl6.isin(scout_concetps.end_uses).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl6": "end_use"})
 
 # there are some rows with no fuel_type, lvl7 has year values.  move the year
 # and values
-MarketsSavingsByCategory.query('lvl7.isin(@YEARS)')
-idx = MarketsSavingsByCategory.query('lvl7.isin(@YEARS)').index
+MarketsSavingsByCategory.query('lvl7.isin(@scout_concetps.years)')
+idx = MarketsSavingsByCategory.query('lvl7.isin(@scout_concetps.years)').index
 MarketsSavingsByCategory.loc[idx, "lvl9"] = MarketsSavingsByCategory.loc[idx, "lvl8"]
 MarketsSavingsByCategory.loc[idx, "lvl8"] = MarketsSavingsByCategory.loc[idx, "lvl7"]
 MarketsSavingsByCategory.loc[idx, "lvl7"] = pd.NA
 
-if MarketsSavingsByCategory.lvl7.isin(FUEL_TYPES + [pd.NA]).all():
+if MarketsSavingsByCategory.lvl7.isin(scout_concetps.fuel_types + [pd.NA]).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl7": "fuel_type"})
 
-if MarketsSavingsByCategory.lvl8.isin(YEARS).all():
+if MarketsSavingsByCategory.lvl8.isin(scout_concetps.years).all():
     MarketsSavingsByCategory = MarketsSavingsByCategory.rename(columns = {"lvl8": "year", "lvl9": "value"})
     MarketsSavingsByCategory.year = MarketsSavingsByCategory.year.astype("Int64")
     MarketsSavingsByCategory.value = MarketsSavingsByCategory.value.astype(float)
@@ -265,19 +256,19 @@ timer.toc()
 ########################################
 # MarketsSavingsOverall
 timer.tic("Cleaning up MarketsSavingsOverall")
-if MarketsSavingsOverall.lvl0.isin(ECMS).all():
+if MarketsSavingsOverall.lvl0.isin(scout_concetps.ecms).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl0" : "ecm"})
 
 if (MarketsSavingsOverall.lvl1 == "Markets and Savings (Overall)").all():
     MarketsSavingsOverall = MarketsSavingsOverall.drop("lvl1", axis = 1)
 
-if MarketsSavingsOverall.lvl2.isin(SCENARIOS).all():
+if MarketsSavingsOverall.lvl2.isin(scout_concetps.scenarios).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl2": "adoption_scenario"})
 
-if MarketsSavingsOverall.lvl3.isin(OUTCOME_METRICS).all():
+if MarketsSavingsOverall.lvl3.isin(scout_concetps.outcome_metrics).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl3": "outcome_metric"})
 
-if MarketsSavingsOverall.lvl4.isin(YEARS).all():
+if MarketsSavingsOverall.lvl4.isin(scout_concetps.years).all():
     MarketsSavingsOverall = MarketsSavingsOverall.rename(columns = {"lvl4": "year", "lvl5": "value"})
     MarketsSavingsOverall.year = MarketsSavingsOverall.year.astype("Int64")
     MarketsSavingsOverall.value = MarketsSavingsOverall.value.astype(float)
@@ -290,7 +281,7 @@ timer.toc()
 ########################################
 # FilterVariables
 timer.tic("Cleaning up FilterVariables")
-if FilterVariables.lvl0.isin(ECMS).all():
+if FilterVariables.lvl0.isin(scout_concetps.ecms).all():
     FilterVariables = FilterVariables.rename(columns = {"lvl0" : "ecm"})
 
 if (FilterVariables.lvl1 == "Filter Variables").all():

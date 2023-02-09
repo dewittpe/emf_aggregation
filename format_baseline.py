@@ -2,16 +2,10 @@ import pandas as pd
 from utilities import json_to_df
 from utilities import isfloat
 from utilities import whats_in_a_series
-from utilities import REGIONS
-from utilities import BUILDING_TYPES
-from utilities import FUEL_TYPES
-from utilities import END_USES
-from utilities import SUPPLY_DEMAND
-from utilities import ENERGY_STOCK
-from utilities import TECHNOLOGIES
-from utilities import YEARS
-from utilities import DEFINED_VALUES
+from Scout_Concepts import ScoutConcepts
 from timer import Timer
+
+scout_concepts = ScoutConcepts()
 
 timer = Timer()
 timer.tic("Process mseg_res_com_emm.json to a columized data form")
@@ -33,29 +27,29 @@ DF.query("lvl8.notna()").lvl7.value_counts() # likely year
 DF.query("lvl8.notna()").lvl8.value_counts() # likely value
 
 # rename columns that can be renamed
-if DF.lvl0.isin(REGIONS).all():
+if DF.lvl0.isin(scout_concepts.regions).all():
     DF = DF.rename({"lvl0": "region"}, axis = 1)
 
-if DF.lvl1.isin(BUILDING_TYPES).all():
+if DF.lvl1.isin(scout_concepts.building_types).all():
     DF = DF.rename({"lvl1": "building_type"}, axis = 1)
 
 # lvl2 has more than just the expected fuel_type
-DF.lvl2.isin(FUEL_TYPES).any()
+DF.lvl2.isin(scout_concepts.fuel_types).any()
 
 # looks like meta data about residential buidings
 # split this off to another DataFrame
-DF[ ~DF.lvl2.isin(FUEL_TYPES) ].lvl2.value_counts()
+DF[ ~DF.lvl2.isin(scout_concepts.fuel_types) ].lvl2.value_counts()
 
-DF_metadata = DF[ ~DF.lvl2.isin(FUEL_TYPES) ].reset_index(drop = True).copy()
+DF_metadata = DF[ ~DF.lvl2.isin(scout_concepts.fuel_types) ].reset_index(drop = True).copy()
 
 # set DF to be only the rows with a fuel type in position 2
-DF = DF[ DF.lvl2.isin(FUEL_TYPES) ].reset_index(drop = True)
+DF = DF[ DF.lvl2.isin(scout_concepts.fuel_types) ].reset_index(drop = True)
 
-if DF.lvl2.isin(FUEL_TYPES).all():
+if DF.lvl2.isin(scout_concepts.fuel_types).all():
     DF = DF.rename({"lvl2": "fuel_type"}, axis = 1)
 
 # what is in lvl3?
-if DF.lvl3.isin(END_USES).all():
+if DF.lvl3.isin(scout_concepts.end_uses).all():
     DF = DF.rename({"lvl3": "end_use"}, axis = 1)
 
 # what is in lvl4?
@@ -79,7 +73,7 @@ DF = DF.rename(columns = {
 
 # if technology.isin(['energy', 'stock']) then shift values over one column and
 # set the technology to NA
-idx = DF.technology.isin(ENERGY_STOCK)
+idx = DF.technology.isin(scout_concepts.energy_stock)
 DF.loc[idx]
 DF.loc[idx, 'value'] = DF.loc[idx, 'year']
 DF.loc[idx, 'year']  = DF.loc[idx, 'energy_stock']
@@ -87,7 +81,7 @@ DF.loc[idx, 'energy_stock']  = DF.loc[idx, 'technology']
 DF.loc[idx, 'technology']  = pd.NA
 
 # do a similar thing for energy, stock values in the supply_demand colum
-idx = DF.supply_demand.isin(ENERGY_STOCK)
+idx = DF.supply_demand.isin(scout_concepts.energy_stock)
 DF.loc[idx]
 DF.loc[idx, 'value'] = DF.loc[idx, 'energy_stock']
 DF.loc[idx, 'year']  = DF.loc[idx, 'technology']
@@ -97,8 +91,8 @@ DF.loc[idx, 'supply_demand']  = pd.NA
 
 # if technology is na and supply_demand is not in ['supply', 'demand'] then flip
 # the values in the columns
-DF.query("supply_demand.notna() & not supply_demand.isin(@SUPPLY_DEMAND)")
-idx = DF.query("supply_demand.notna() & not supply_demand.isin(@SUPPLY_DEMAND) & technology.isna()").index
+DF.query("supply_demand.notna() & not supply_demand.isin(@scout_concepts.supply_demand)")
+idx = DF.query("supply_demand.notna() & not supply_demand.isin(@scout_concepts.supply_demand) & technology.isna()").index
 DF.loc[idx]
 DF.loc[idx, "technology"] = DF.loc[idx, "supply_demand"]
 DF.loc[idx, "supply_demand"] = pd.NA
@@ -109,31 +103,31 @@ DF.loc[DF.query('year == "NA"').index, "year"] = pd.NA
 timer.toc()
 
 timer.tic(task = "Check the column contents")
-if not DF.region.isin(REGIONS).all():
+if not DF.region.isin(scout_concepts.regions).all():
     raise Exception("DF.region contains more than just expected region values")
 
-if not DF.building_type.isin(BUILDING_TYPES).all():
+if not DF.building_type.isin(scout_concepts.building_types).all():
     raise Exception("DF.building_type contains more than just expected building_type values")
 
-if not DF.fuel_type.isin(FUEL_TYPES).all():
+if not DF.fuel_type.isin(scout_concepts.fuel_types).all():
     raise Exception("DF.fuel_type contains more than just expected fuel_type values")
 
-if not DF.end_use.isin(END_USES).all():
+if not DF.end_use.isin(scout_concepts.end_uses).all():
     print(set(DF.end_use))
     raise Exception("DF.end_use contains more than just expected end_use values")
 
-if not DF.supply_demand.isin(SUPPLY_DEMAND + [pd.NA]).all():
+if not DF.supply_demand.isin(scout_concepts.supply_demand + [pd.NA]).all():
     raise Exception("DF.supply_demand contains more than just expected supply_demand values")
 
-if not DF.technology.isin(TECHNOLOGIES + [pd.NA]).all():
-    print(list(set(DF.query("~technology.isin(@TECHNOLOGIES)").technology)))
+if not DF.technology.isin(scout_concepts.technologies + [pd.NA]).all():
+    print(list(set(DF.query("~technology.isin(@scout_concepts.technologies)").technology)))
     raise Exception("DF.technology contains more than just expected technology values")
 
-if not DF.energy_stock.isin(ENERGY_STOCK + [pd.NA]).all():
+if not DF.energy_stock.isin(scout_concepts.energy_stock + [pd.NA]).all():
     raise Exception("DF.energy_stock contains more than just expected energy_stock values")
 
-if not DF.year.isin(YEARS + [pd.NA]).all():
-    print(list(set(DF.query("~year.isin(@YEARS)").year)))
+if not DF.year.isin(scout_concepts.years + [pd.NA]).all():
+    print(list(set(DF.query("~year.isin(@scout_concepts.years)").year)))
     raise Exception("DF.year contains more than just expected year values")
 
 if not DF.value.apply(isfloat).all():
