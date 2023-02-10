@@ -2,7 +2,7 @@ import pandas as pd
 from utilities import json_to_df
 from utilities import isfloat
 from utilities import whats_in_a_series
-from Scout_Concepts import ScoutConcepts
+from scout_concepts import ScoutConcepts
 from timer import Timer
 
 scout_concepts = ScoutConcepts()
@@ -11,7 +11,7 @@ timer = Timer()
 timer.tic("Process mseg_res_com_emm.json to a columized data form")
 
 timer.tic("Read in the baseline data and format as a DataFrame")
-DF = json_to_df(path = 'mseg_res_com_emm.json')
+DF = json_to_df(path = 'stock_energy_tech_data/mseg_res_com_emm.json')
 timer.toc()
 
 timer.tic(task = "Explore and clean the data set")
@@ -146,7 +146,7 @@ DF.value = pd.to_numeric(DF.value)
 DF["Scenario"] = "NT.Ref.R2"
 
 timer.tic("Write baseline.parquet")
-DF.to_parquet('baseline.parquet')
+DF.to_parquet('parquets/baseline.parquet')
 timer.toc()
 timer.toc()
 

@@ -7,7 +7,7 @@ timer.tic("Process site_source_co2_conversions.json to a columized data form")
 
 ################################################################################
 timer.tic("Read in the baseline data and format as a DataFrame")
-DF = json_to_df(path = 'site_source_co2_conversions.json')
+DF = json_to_df(path = 'convert_data/site_source_co2_conversions.json')
 timer.toc()
 
 ################################################################################
@@ -41,7 +41,7 @@ timer.toc()
 
 ################################################################################
 timer.tic("Write site_source_co2_conversions.parquet")
-DF.to_parquet('site_source_co2_conversions.parquet')
+DF.to_parquet('parquets/site_source_co2_conversions.parquet')
 timer.toc()
 
 ################################################################################

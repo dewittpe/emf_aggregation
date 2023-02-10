@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import numpy as np
-from Scout_Concepts import ScoutConcepts
+from scout_concepts import ScoutConcepts
 
 scout_concepts = ScoutConcepts()
 

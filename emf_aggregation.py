@@ -1,8 +1,8 @@
 import pandas as pd
 from timer import Timer
-from Scout_to_EMF_mappings import ScoutEMFMappings
-from Scout_Concepts import ScoutConcepts
-from Scout_Concepts import ScoutMappings
+from scout_emf_mappings import ScoutEMFMappings
+from scout_concepts import ScoutConcepts
+from scout_concepts import ScoutMappings
 
 scout_emf_mappings = ScoutEMFMappings()
 scout_concecpts = ScoutConcepts()
@@ -13,10 +13,10 @@ timer.tic("EMF Aggregation")
 
 ################################################################################
 timer.tic("Import parquets")
-baseline = pd.read_parquet("baseline.parquet")
-MarketsSavingsByCategory = pd.read_parquet("MarketsSavingsByCategory.parquet")
-CO2_intensity_of_electricity = pd.read_parquet("CO2_intensity_of_electricity.parquet")
-site_source_co2_conversions = pd.read_parquet("site_source_co2_conversions.parquet")
+baseline = pd.read_parquet("parquets/baseline.parquet")
+MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
+CO2_intensity_of_electricity = pd.read_parquet("parquets/CO2_intensity_of_electricity.parquet")
+site_source_co2_conversions = pd.read_parquet("parquets/site_source_co2_conversions.parquet")
 timer.toc()
 
 ################################################################################

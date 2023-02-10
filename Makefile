@@ -2,26 +2,66 @@
 
 all: by_category_vs_overall.log aggs.parquet
 
-baseline.parquet: format_baseline.py utilities.py Scout_Concepts.py mseg_res_com_emm.json
+parquets/baseline.parquet:\
+	format_baseline.py\
+	utilities.py\
+	timer.py\
+	scout_concepts.py\
+	stock_energy_tech_data/mseg_res_com_emm.json
 	python $<
 
-CO2_intensity_of_electricity.parquet: format_CO2_intensity_of_electricity.py utilities.py Scout_Concepts.py emm_region_emissions_prices.json
+parquets/CO2_intensity_of_electricity.parquet:\
+	format_CO2_intensity_of_electricity.py\
+	utilities.py\
+	timer.py\
+	scout_concepts.py\
+	convert_data/emm_region_emissions_prices.json
 	python $<
 
-site_source_co2_conversions.parquet: format_site_source_co2_conversions.py utilities.py timer.py site_source_co2_conversions.json
+parquets/site_source_co2_conversions.parquet:\
+	format_site_source_co2_conversions.py\
+	utilities.py\
+	timer.py\
+	convert_data/site_source_co2_conversions.json
 	python $<
 
-OnSiteGenerationByCategory.parquet OnSiteGenerationOverall.parquet MarketsSavingsByCategory.parquet MarketsSavingsOverall.parquet FilterVariables.parquet FinancialMetrics.parquet &: format_ecm_results.py utilities.py Scout_Concepts.py ecm_results_1-1.json ecm_results_2.json ecm_results_3-1.json
+parquets/OnSiteGenerationByCategory.parquet parquets/OnSiteGenerationOverall.parquet parquets/MarketsSavingsByCategory.parquet parquets/MarketsSavingsOverall.parquet parquets/FilterVariables.parquet parquets/FinancialMetrics.parquet &: \
+	format_ecm_results.py\
+	utilities.py\
+	scout_concepts.py\
+	timer.py\
+	ecm_results/ecm_results_1-1.json\
+	ecm_results/ecm_results_2.json\
+	ecm_results/ecm_results_3-1.json
 	python $<
 
 %.json: %.json.gz
 	gunzip -dk $<
 
-by_category_vs_overall.log: by_category_vs_overall.py OnSiteGenerationByCategory.parquet OnSiteGenerationOverall.parquet MarketsSavingsOverall.parquet MarketsSavingsByCategory.parquet
+by_category_vs_overall.log:\
+	by_category_vs_overall.py\
+	timer.py\
+	utilities.py\
+	parquets/OnSiteGenerationByCategory.parquet\
+	parquets/OnSiteGenerationOverall.parquet\
+	parquets/MarketsSavingsOverall.parquet\
+	parquets/MarketsSavingsByCategory.parquet
 	python $<
 
-aggs.parquet: emf_aggregation.py baseline.parquet MarketsSavingsByCategory.parquet CO2_intensity_of_electricity.parquet site_source_co2_conversions.parquet
+aggs.parquet:\
+	emf_aggregation.py\
+	scout_emf_mappings.py\
+	scout_concepts.py\
+	timer.py\
+	parquets/baseline.parquet\
+	parquets/MarketsSavingsByCategory.parquet\
+	parquets/CO2_intensity_of_electricity.parquet\
+	parquets/site_source_co2_conversions.parquet
 	python $<
 
 clean:
-	/bin/rm -f $(PARQUETS) *.log *.json
+	/bin/rm -f parquets/*.parquet
+	/bin/rm -f *.log 
+	/bin/rm -f convert_data/*.json
+	/bin/rm -f ecm_results/*.json
+	/bin/rm -f stock_energy_tech_data/*.json

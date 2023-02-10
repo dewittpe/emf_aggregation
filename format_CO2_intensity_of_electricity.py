@@ -7,7 +7,7 @@ timer.tic("Process emm_region_emissions_prices.json to a columized data form")
 
 ################################################################################
 timer.tic("Read in the baseline data and format as a DataFrame")
-DF = json_to_df(path = 'emm_region_emissions_prices.json')
+DF = json_to_df(path = 'convert_data/emm_region_emissions_prices.json')
 timer.toc()
 
 ################################################################################
@@ -30,7 +30,7 @@ timer.toc()
 
 ################################################################################
 timer.tic("Write CO2_intensity_of_electricity.parquet")
-DF.to_parquet('CO2_intensity_of_electricity.parquet')
+DF.to_parquet('parquets/CO2_intensity_of_electricity.parquet')
 timer.toc()
 
 ################################################################################

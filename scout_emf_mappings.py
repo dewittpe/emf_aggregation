@@ -1,5 +1,5 @@
 import pandas as pd
-from Scout_Concepts import ScoutConcepts
+from scout_concepts import ScoutConcepts
 scout_concpets = ScoutConcepts()
 
 class ScoutEMFMappings():

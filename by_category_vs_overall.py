@@ -22,19 +22,19 @@ timer.tic(task = "Compare the 'By Category' and 'Overall' data sets.")
 timer.tic(task = "Import all parquet files")
 
 timer.tic(task = "Import OnSiteGenerationByCategory")
-OnSiteGenerationByCategory = pd.read_parquet("OnSiteGenerationByCategory.parquet")
+OnSiteGenerationByCategory = pd.read_parquet("parquets/OnSiteGenerationByCategory.parquet")
 timer.toc()
 
 timer.tic(task = "Import OnSiteGenerationOverall")
-OnSiteGenerationOverall = pd.read_parquet("OnSiteGenerationOverall.parquet")
+OnSiteGenerationOverall = pd.read_parquet("parquets/OnSiteGenerationOverall.parquet")
 timer.toc()
 
 timer.tic(task = "MarketsSavingsByCategory")
-MarketsSavingsByCategory = pd.read_parquet("MarketsSavingsByCategory.parquet")
+MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
 timer.toc()
 
 timer.tic(task = "MarketsSavingsOverall")
-MarketsSavingsOverall = pd.read_parquet("MarketsSavingsOverall.parquet")
+MarketsSavingsOverall = pd.read_parquet("parquets/MarketsSavingsOverall.parquet")
 timer.toc()
 
 timer.toc()

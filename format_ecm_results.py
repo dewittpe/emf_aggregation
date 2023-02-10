@@ -2,7 +2,7 @@ import pandas as pd
 from utilities import json_to_df
 from utilities import isfloat
 from utilities import whats_in_a_series
-from Scout_Concepts import ScoutConcepts
+from scout_concepts import ScoutConcepts
 from timer import Timer
 
 scout_concetps = ScoutConcepts()
@@ -14,13 +14,13 @@ timer.tic("Process ecm_results_1-1.json, ecm_results_2.json, and ecm_results_3-1
 # Read in the baseline data and format as a DataFrame
 timer.tic("Read in json files and formate as one DataFrame")
 timer.tic("reading in ecm_results_1-1.json (0by50.BSG.1.R2)")
-DF1 = json_to_df(path = 'ecm_results_1-1.json')
+DF1 = json_to_df(path = 'ecm_results/ecm_results_1-1.json')
 timer.toc()
 timer.tic("reading in ecm_results_2.json (0by50.BSG.2.R2)")
-DF2 = json_to_df(path = 'ecm_results_2.json')
+DF2 = json_to_df(path = 'ecm_results/ecm_results_2.json')
 timer.toc()
 timer.tic("reading in ecm_results_3-1.json (0by50.BSG.Adv.R2)")
-DF3 = json_to_df(path = 'ecm_results_3-1.json')
+DF3 = json_to_df(path = 'ecm_results/ecm_results_3-1.json')
 timer.toc()
 
 timer.tic("Building one data set from all result files")
@@ -299,12 +299,12 @@ timer.toc()
 # Output
 timer.tic("Writting parquet files")
 
-OnSiteGenerationByCategory.to_parquet('OnSiteGenerationByCategory.parquet')
-OnSiteGenerationOverall.to_parquet('OnSiteGenerationOverall.parquet')
-MarketsSavingsByCategory.to_parquet('MarketsSavingsByCategory.parquet')
-MarketsSavingsOverall.to_parquet('MarketsSavingsOverall.parquet')
-FilterVariables.to_parquet('FilterVariables.parquet')
-FinancialMetrics.to_parquet('FinancialMetrics.parquet')
+OnSiteGenerationByCategory.to_parquet('parquets/OnSiteGenerationByCategory.parquet')
+OnSiteGenerationOverall.to_parquet('parquets/OnSiteGenerationOverall.parquet')
+MarketsSavingsByCategory.to_parquet('parquets/MarketsSavingsByCategory.parquet')
+MarketsSavingsOverall.to_parquet('parquets/MarketsSavingsOverall.parquet')
+FilterVariables.to_parquet('parquets/FilterVariables.parquet')
+FinancialMetrics.to_parquet('parquets/FinancialMetrics.parquet')
 
 timer.toc()
 
