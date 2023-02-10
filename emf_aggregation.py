@@ -16,6 +16,7 @@ timer.tic("Import parquets")
 baseline = pd.read_parquet("baseline.parquet")
 MarketsSavingsByCategory = pd.read_parquet("MarketsSavingsByCategory.parquet")
 CO2_intensity_of_electricity = pd.read_parquet("CO2_intensity_of_electricity.parquet")
+site_source_co2_conversions = pd.read_parquet("site_source_co2_conversions.parquet")
 timer.toc()
 
 ################################################################################

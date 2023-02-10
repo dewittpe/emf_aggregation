@@ -1,9 +1,6 @@
 import pandas as pd
 from utilities import json_to_df
 from timer import Timer
-from Scout_Concepts import ScoutConcepts
-
-scout_concepts = ScoutConcepts()
 
 timer = Timer()
 timer.tic("Process site_source_co2_conversions.json to a columized data form")
