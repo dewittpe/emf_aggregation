@@ -142,6 +142,9 @@ timer.toc()
 DF.year = DF.year.astype("Int64")
 DF.value = pd.to_numeric(DF.value)
 
+# Add on the EMF Scenario
+DF["Scenario"] = "NT.Ref.R2"
+
 timer.tic("Write baseline.parquet")
 DF.to_parquet('baseline.parquet')
 timer.toc()

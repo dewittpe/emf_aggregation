@@ -13,20 +13,20 @@ timer.tic("Process ecm_results_1-1.json, ecm_results_2.json, and ecm_results_3-1
 ################################################################################
 # Read in the baseline data and format as a DataFrame
 timer.tic("Read in json files and formate as one DataFrame")
-timer.tic("reading in ecm_results_1-1.json")
+timer.tic("reading in ecm_results_1-1.json (0by50.BSG.1.R2)")
 DF1 = json_to_df(path = 'ecm_results_1-1.json')
 timer.toc()
-timer.tic("reading in ecm_results_2.json")
+timer.tic("reading in ecm_results_2.json (0by50.BSG.2.R2)")
 DF2 = json_to_df(path = 'ecm_results_2.json')
 timer.toc()
-timer.tic("reading in ecm_results_3-1.json")
+timer.tic("reading in ecm_results_3-1.json (0by50.BSG.Adv.R2)")
 DF3 = json_to_df(path = 'ecm_results_3-1.json')
 timer.toc()
 
 timer.tic("Building one data set from all result files")
 DF = pd.concat([DF1, DF2, DF3],
-               keys = ["ecm_results_1-1", "ecm_results_2", "ecm_results_3-1"])
-DF = DF.reset_index(level = 0, names = ["result_file"])
+               keys = ["0by50.BSG.1.R2", "0by50.BSG.2.R2", "0by50.BSG.Adv.R2"])
+DF = DF.reset_index(level = 0, names = ["Scenario"])
 del DF1
 del DF2
 del DF3

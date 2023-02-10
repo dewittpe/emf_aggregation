@@ -46,7 +46,7 @@ timer.tic("Compare OnSiteGenerationByCategory to OnSiteGenerationOverall")
 timer.tic("aggregate OnSiteGenerationByCategory")
 OnSiteGenerationByCategory_agg = (
     OnSiteGenerationByCategory
-        .groupby(['result_file', 'outcome_metric', 'year'])
+        .groupby(['Scenario', 'outcome_metric', 'year'])
         .agg({"value" : "sum"})
         .reset_index()
         )
@@ -57,13 +57,13 @@ d = (
     OnSiteGenerationByCategory_agg
         .merge(OnSiteGenerationOverall,
                how = "outer",
-               on = ['result_file', 'outcome_metric', 'year'],
+               on = ['Scenario', 'outcome_metric', 'year'],
                suffixes = ("_ByCat_agg", "_overall"),
                indicator = True)
     )
 d["Abs_diff"] = abs(d.value_ByCat_agg - d.value_overall)
 d["Abs_percent_diff"] = 100 * abs((d.value_ByCat_agg - d.value_overall) / d.value_overall)
-d.sort_values(by = ['result_file', 'outcome_metric', 'year'])
+d.sort_values(by = ['Scenario', 'outcome_metric', 'year'])
 timer.toc()
 
 
@@ -93,7 +93,7 @@ timer.tic("Compare MarketsSavingsByCategory to MarketsSavingsOverall")
 timer.tic("aggregate MarketsSavingsByCategory")
 MarketsSavingsByCategory_agg = (
     MarketsSavingsByCategory
-        .groupby(['result_file', 'ecm', 'adoption_scenario', 'outcome_metric', 'year'])
+        .groupby(['Scenario', 'ecm', 'adoption_scenario', 'outcome_metric', 'year'])
         .agg({"value" : "sum"})
         .reset_index()
         )
@@ -104,13 +104,13 @@ d = (
     MarketsSavingsByCategory_agg
         .merge(MarketsSavingsOverall,
                how = "outer",
-               on = ['result_file', 'ecm', 'adoption_scenario', 'outcome_metric', 'year'],
+               on = ['Scenario', 'ecm', 'adoption_scenario', 'outcome_metric', 'year'],
                suffixes = ("_ByCat_agg", "_overall"),
                indicator = True)
     )
 d["Abs_diff"] = abs(d.value_ByCat_agg - d.value_overall)
 d["Abs_percent_diff"] = 100 * abs((d.value_ByCat_agg - d.value_overall) / d.value_overall)
-d.sort_values(by = ['result_file', 'outcome_metric', 'year'])
+d.sort_values(by = ['Scenario', 'outcome_metric', 'year'])
 timer.toc()
 
 with open("by_category_vs_overall.log", "a") as f:
