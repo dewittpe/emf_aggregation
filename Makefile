@@ -60,6 +60,7 @@ aggs.parquet:\
 	python $<
 
 clean:
+	/bin/rm -rf __pycache__
 	/bin/rm -f parquets/*.parquet
 	/bin/rm -f *.log 
 	/bin/rm -f convert_data/*.json
