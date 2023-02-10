@@ -1,6 +1,6 @@
 .PHONY : all clean
 
-all: by_category_vs_overall.log emf_aggregation.log
+all: by_category_vs_overall.log aggs.parquet
 
 baseline.parquet: format_baseline.py utilities.py Scout_Concepts.py mseg_res_com_emm.json
 	python $<
@@ -20,7 +20,7 @@ OnSiteGenerationByCategory.parquet OnSiteGenerationOverall.parquet MarketsSaving
 by_category_vs_overall.log: by_category_vs_overall.py OnSiteGenerationByCategory.parquet OnSiteGenerationOverall.parquet MarketsSavingsOverall.parquet MarketsSavingsByCategory.parquet
 	python $<
 
-emf_aggregation.log: emf_aggregation.py baseline.parquet MarketsSavingsByCategory.parquet CO2_intensity_of_electricity.parquet site_source_co2_conversions.parquet
+aggs.parquet: emf_aggregation.py baseline.parquet MarketsSavingsByCategory.parquet CO2_intensity_of_electricity.parquet site_source_co2_conversions.parquet
 	python $<
 
 clean:

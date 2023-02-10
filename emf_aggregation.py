@@ -288,8 +288,13 @@ aggs["Units"] = "EJ/yr"
 idx = aggs.query("Variable.str.contains('Emmissions')").index
 aggs.loc[idx, "Units"] = "Mt CO2\yr"
 
-aggs
+print(aggs)
 
+aggs.to_parquet("aggs.parquet")
+
+aggs = pd.read_parquet("aggs.parquet")
+
+aggs
 
 #baseline_agg_wide = (
 #        baseline_agg.astype({'year':'str'})
@@ -304,8 +309,6 @@ aggs
 #baseline_agg_wide = baseline_agg_wide.reset_index()
 #baseline_agg_wide.to_csv("baseline_agg_wide.csv", index = False)
 #baseline_agg.to_csv("baseline_agg.csv", index = False)
-
-timer.toc()
 
 timer.toc()
 
