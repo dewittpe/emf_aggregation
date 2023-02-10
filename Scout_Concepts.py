@@ -179,7 +179,8 @@ class ScoutConcepts():
 
         self.fuel_types = [
                 'electricity', 'Electric',
-                'natural gas', 'Natural Gas', 'Propane',
+                'natural gas', 'Natural Gas',
+                'Propane', 'propane',
                 'distillate', 'Distillate/Other', 'Biomass',
                 'other fuel'
                 ]
