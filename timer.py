@@ -8,9 +8,19 @@ class TimerError(Exception):
     """
 
 class Timer():
-    def __init__(self):
+    def __init__(self, task = ""):
         self._start_time = []
         self._task = []
+        if task != "":
+            self.tic(task)
+
+    def __enter__(self):
+        if len(self._task) == 0:
+            self.tic()
+        return self
+
+    def __exit__(self, *exc_info):
+        self.toc()
 
     def tic(self, task = ""):
 

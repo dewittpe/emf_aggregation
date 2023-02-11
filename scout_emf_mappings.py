@@ -19,11 +19,11 @@ class ScoutEMFMappings():
             [
                 {
                     'outcome_metric' : 'Avoided CO\u2082 Emissions (MMTons)',
-                    'emf_base_string': '*Emissions|CO2|Energy|Demand|Buildings'
+                    'emf_base_string': 'Emissions|CO2|Energy|Demand|Buildings'
                 },
                 {
                     'outcome_metric' : 'Energy Savings (MMBtu)',
-                    'emf_base_string': '*Final Energy|Buildings'
+                    'emf_base_string': 'Final Energy|Buildings'
                 }
             ]
             )
