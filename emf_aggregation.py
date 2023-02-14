@@ -15,8 +15,11 @@ timer.tic("EMF Aggregation")
 with Timer('Import parquet files'):
     baseline = pd.read_parquet("parquets/baseline.parquet")
     MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
-    CO2_intensity_of_electricity = pd.read_parquet("parquets/CO2_intensity_of_electricity.parquet")
+    CO2_intensity_of_electricity = pd.read_parquet("parquets/co2_intensity_of_electricity.parquet")
     site_source_co2_conversions = pd.read_parquet("parquets/site_source_co2_conversions.parquet")
+    end_use_electricity_price = pd.read_parquet("parquets/end_use_electricity_price.parquet")
+    #petro_df = pd.read_parquet("parquets/site_source_co2_conversions.parquet")
+    #elec_df = pd.read_parquet("parquets/end_use_electricity_price.parquet")
 
 ################################################################################
 with Timer("Subset to years % 5 == 0"):
@@ -284,7 +287,8 @@ with Timer("Concat Aggregations, process, and write out"):
 
 
 
-
+aggs
+elec_df
 
 
 

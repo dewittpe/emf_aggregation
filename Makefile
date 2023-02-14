@@ -10,11 +10,10 @@ parquets/baseline.parquet:\
 	stock_energy_tech_data/mseg_res_com_emm.json
 	python $<
 
-parquets/CO2_intensity_of_electricity.parquet:\
-	format_CO2_intensity_of_electricity.py\
+parquets/co2_intensity_of_electricity.parquet parquets/end_use_electricity_price.parquet:\
+	format_emm_region_emissions_prices.py\
 	utilities.py\
 	timer.py\
-	scout_concepts.py\
 	convert_data/emm_region_emissions_prices.json
 	python $<
 
@@ -56,7 +55,8 @@ aggs.parquet:\
 	parquets/baseline.parquet\
 	parquets/MarketsSavingsByCategory.parquet\
 	parquets/CO2_intensity_of_electricity.parquet\
-	parquets/site_source_co2_conversions.parquet
+	parquets/site_source_co2_conversions.parquet\
+	parquets/emm_region_emissions_prices.parquet
 	python $<
 
 clean:
