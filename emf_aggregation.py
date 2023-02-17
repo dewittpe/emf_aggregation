@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 from timer import Timer
 from scout_emf_mappings import ScoutEMFMappings
 from scout_concepts import ScoutConcepts

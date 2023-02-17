@@ -8,11 +8,12 @@ class TimerError(Exception):
     """
 
 class Timer():
-    def __init__(self, task = ""):
+    def __init__(self, task = "", verbose = False):
         self._start_time = []
         self._task = []
+        self._verbose = verbose
         if task != "":
-            self.tic(task)
+            self.tic(task, verbose)
 
     def __enter__(self):
         if len(self._task) == 0:
@@ -22,12 +23,13 @@ class Timer():
     def __exit__(self, *exc_info):
         self.toc()
 
-    def tic(self, task = ""):
+    def tic(self, task = "", verbose = True):
 
         if task != "":
             t = ' ' * (len(self._task) * 2)
             t = t + "Started  task: " + task
-            print(t)
+            if self._verbose:
+                print(t)
 
         if len(self._start_time) == 0:
             self._start_time = [time.perf_counter()]
@@ -45,8 +47,11 @@ class Timer():
 
         elapsed_time = str(datetime.timedelta(seconds = time.perf_counter() - srt))
 
-        if tsk == "":
-            print("Elapsed time: " + elapsed_time)
-        else:
-            t = ' ' * (len(self._task) * 2)
-            print(t + f"Finished task: {tsk}: " + elapsed_time)
+        if self._verbose:
+            if tsk == "":
+                print("Elapsed time: " + elapsed_time)
+            else:
+                t = ' ' * (len(self._task) * 2)
+                print(t + f"Finished task: {tsk}: " + elapsed_time)
+
+        return {"task" : tsk, "time" : elapsed_time}
