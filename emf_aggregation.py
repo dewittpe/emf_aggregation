@@ -18,6 +18,9 @@ with Timer('Import parquet files'):
     CO2_intensity_of_electricity = pd.read_parquet("parquets/co2_intensity_of_electricity.parquet")
     site_source_co2_conversions = pd.read_parquet("parquets/site_source_co2_conversions.parquet")
     end_use_electricity_price = pd.read_parquet("parquets/end_use_electricity_price.parquet")
+    floor_area = pd.read_parquet("parquets/floor_area.parquet")
+    emm_to_states = pd.read_parquet("parquets/emm_to_states.parquet")
+    emm_populaiton_weights = pd.read_parquet("parquets/emm_populaiton_weights.parquet")
     #petro_df = pd.read_parquet("parquets/site_source_co2_conversions.parquet")
     #elec_df = pd.read_parquet("parquets/end_use_electricity_price.parquet")
 
@@ -92,9 +95,10 @@ with Timer("Prepare Baseline Data for Aggregration"):
                    how = 'left',
                    left_on = 'fuel_type',
                    right_on = 'scout_fuel_type')
-            .merge(CO2_intensity_of_electricity,
+            .merge(CO2_intensity_of_electricity[["region", "year", "conversion_factor"]],
                    how = 'left',
                    on = ['region', 'year'])
+            .rename(columns = {"conversion_factor" : "CO2_intensity_of_electricity"})
         )
 
     # Above merges do have extra columns resulting from the non_other and other fuel
@@ -120,141 +124,115 @@ with Timer("Prepare Baseline Data for Aggregration"):
 
 ################################################################################
 with Timer("Aggregate Baseline data for EMF Summary") as t:
-    t.tic("Aggregate Final Energy|Buildings")
-
-    grps = [
-            ["Scenario", "region",                                                   "year"],
-            ["Scenario", "region",                                  "emf_fuel_type", "year"],
-            ["Scenario", "region", "building_class",                                 "year"],
-            ["Scenario", "region", "building_class",                "emf_fuel_type", "year"],
-            ["Scenario", "region", "building_class", "emf_end_use", "emf_fuel_type", "year"]
-        ]
-
-    baseline_energy_aggs = [
-            baseline
-            .groupby(g)
-            .agg({"EJ":"sum"})
-            .rename({"EJ":"value"}, axis = 1)
-            .reset_index()
-            for g in grps
+    groupings = [
+            {
+                'emf_base_string' : 'Final Energy|Buildings',
+                'acol' : 'EJ',
+                'groups' : [
+                    ["Scenario", "region",                                                   "year"],
+                    ["Scenario", "region",                                  "emf_fuel_type", "year"],
+                    ["Scenario", "region", "building_class",                                 "year"],
+                    ["Scenario", "region", "building_class",                "emf_fuel_type", "year"],
+                    ["Scenario", "region", "building_class", "emf_end_use", "emf_fuel_type", "year"]
+                ]
+            },
+            {
+                'emf_base_string' : 'Emissions|CO2|Energy|Demand|Buildings',
+                'acol' : 'CO2',
+                'groups' : [
+                        ["Scenario", "region",                                                              "year"],
+                        ["Scenario", "region",                                  "emf_direct_indirect_fuel", "year"],
+                        ["Scenario", "region", "building_class",                                            "year"],
+                        ["Scenario", "region", "building_class",                "emf_direct_indirect_fuel", "year"],
+                        ["Scenario", "region", "building_class", "emf_end_use",                             "year"],
+                        ["Scenario", "region", "building_class", "emf_end_use", "emf_direct_indirect_fuel", "year"]
+                    ]
+            }
             ]
 
-    baseline_energy_aggs = pd.concat(baseline_energy_aggs)
+    baseline_aggs = [
+                baseline
+                .groupby(grouping)
+                .agg({g['acol']:"sum"})
+                .rename({g['acol']:"value"}, axis = 1)
+                .assign(Variable = lambda x: g['emf_base_string'])
+                .reset_index()
+                for g in groupings
+                for grouping in g["groups"]
+            ]
 
-    baseline_energy_aggs["Variable"] = (
+    baseline_aggs = pd.concat(baseline_aggs)
+
+    baseline_aggs["Variable"] = (
             (
-            "Final Energy|Buildings" +
-            "|" + baseline_energy_aggs.building_class.fillna("") +
-            "|" + baseline_energy_aggs.emf_end_use.fillna("") +
-            "|" + baseline_energy_aggs.emf_fuel_type.fillna("")
+            baseline_aggs["Variable"] +
+            "|" + baseline_aggs.building_class.fillna("") +
+            "|" + baseline_aggs.emf_end_use.fillna("") +
+            "|" + baseline_aggs.emf_fuel_type.fillna("") +
+            "|" + baseline_aggs.emf_direct_indirect_fuel.fillna("")
             )
             .str.replace("\|{2,}", "|", regex = True)
             .str.replace("\|$", "", regex = True)
             )
-
-    t.toc()
-
-    t.tic("Aggregate Emissions|CO2|Energy|Demand|Buildings")
-
-    grps = [
-        ["Scenario", "region",                                                              "year"],
-        ["Scenario", "region",                                  "emf_direct_indirect_fuel", "year"],
-        ["Scenario", "region", "building_class",                                            "year"],
-        ["Scenario", "region", "building_class",                "emf_direct_indirect_fuel", "year"],
-        ["Scenario", "region", "building_class", "emf_end_use",                             "year"],
-        ["Scenario", "region", "building_class", "emf_end_use", "emf_direct_indirect_fuel", "year"]
-            ]
-
-    baseline_emission_aggs = [
-            baseline
-            .groupby(g)
-            .agg({"CO2":"sum"})
-            .rename({"CO2":"value"}, axis = 1)
-            .reset_index()
-            for g in grps
-            ]
-
-    baseline_emission_aggs = pd.concat(baseline_emission_aggs)
-
-    baseline_emission_aggs["Variable"] = (
-            (
-            "Emissions|CO2|Energy|Demand|Buildings" +
-            "|" + baseline_emission_aggs.building_class.fillna("") +
-            "|" + baseline_emission_aggs.emf_end_use.fillna("") +
-            "|" + baseline_emission_aggs.emf_direct_indirect_fuel.fillna("")
-            )
-            .str.replace("\|{2,}", "|", regex = True)
-            .str.replace("\|$", "", regex = True)
-            )
-
-    t.toc()
 
 ################################################################################
 with Timer("Aggregate MarketsSavingsByCategory for EMF Summary"):
+    querys_groups = [
+            {
+                'query' : 'emf_base_string.isin(["Emissions|CO2|Energy|Demand|Buildings", "Final Energy|Buildings"])',
+                'groups' : [
+                        ['Scenario', 'region', 'emf_base_string', 'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class',                                                             'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                                              'year']
+                    ]
+            },
+            {
+                'query' : 'emf_base_string == "Emissions|CO2|Energy|Demand|Buildings"',
+                'groups' : [
+                        ['Scenario', 'region', 'emf_base_string',                                  'emf_direct_indirect_fuel',                  'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class',                'emf_direct_indirect_fuel',                  'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use', 'emf_direct_indirect_fuel',                  'year']
+                    ]
+            },
+            {
+                'query' : 'emf_base_string == "Final Energy|Buildings"',
+                'groups' : [
+                        ['Scenario', 'region', 'emf_base_string',                                                              'emf_fuel_type', 'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class',                                            'emf_fuel_type', 'year'],
+                        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                             'emf_fuel_type', 'year']
+                    ]
+            }
+            ]
 
-    grps0 = [
-        ['Scenario', 'region', 'emf_base_string',                                                                               'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class',                                                             'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                                              'year']
-            ]
-    grps1 = [
-        ['Scenario', 'region', 'emf_base_string',                                  'emf_direct_indirect_fuel',                  'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class',                'emf_direct_indirect_fuel',                  'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use', 'emf_direct_indirect_fuel',                  'year']
-            ]
-    grps2 = [
-        ['Scenario', 'region', 'emf_base_string',                                                              'emf_fuel_type', 'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class',                                            'emf_fuel_type', 'year'],
-        ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                             'emf_fuel_type', 'year']
-            ]
-
-    aggs0 = [
+    aggs = [
             MarketsSavingsByCategory
+            .query(q["query"])
             .groupby(g)
             .agg({"value":"sum"})
-            .reset_index() 
-            for g in grps0
+            .reset_index()
+            for q in querys_groups
+            for g in q["groups"]
             ]
 
-    aggs1 = [
-            MarketsSavingsByCategory
-            .query('emf_base_string == "Emissions|CO2|Energy|Demand|Buildings"')
-            .groupby(g)
-            .agg({"value":"sum"})
-            .reset_index() 
-            for g in grps1
-            ]
-
-    aggs2 = [
-            MarketsSavingsByCategory
-            .query('emf_base_string == "Final Energy|Buildings"')
-            .groupby(g)
-            .agg({"value":"sum"})
-            .reset_index() 
-            for g in grps2
-            ]
-
-    aggs = [pd.concat(a) for a in [aggs0, aggs1, aggs2]]
     aggs = pd.concat(aggs)
 
     aggs["Variable"] = (
-            (
-            aggs.emf_base_string +
-            "|" + aggs.building_class.fillna("") +
-            "|" + aggs.emf_end_use.fillna("") +
-            "|" + aggs.emf_direct_indirect_fuel.fillna("") +
-            "|" + aggs.emf_fuel_type.fillna("")
+                (
+                    aggs.emf_base_string +
+                    "|" + aggs.building_class.fillna("") +
+                    "|" + aggs.emf_end_use.fillna("") +
+                    "|" + aggs.emf_direct_indirect_fuel.fillna("") +
+                    "|" + aggs.emf_fuel_type.fillna("")
+                )
+                .str.replace("\|{2,}", "|", regex = True)
+                .str.replace("\|$", "", regex = True)
             )
-            .str.replace("\|{2,}", "|", regex = True)
-            .str.replace("\|$", "", regex = True)
-            )
-
 
 ################################################################################
 with Timer("Concat Aggregations, process, and write out"):
 
     aggs = (
-            pd.concat([baseline_energy_aggs, baseline_emission_aggs, aggs])
+            pd.concat([baseline_aggs, aggs])#[baseline_energy_aggs, baseline_emission_aggs, aggs])
             .rename({"region":"Region"}, axis = 1)
            )
 
@@ -281,35 +259,26 @@ with Timer("Concat Aggregations, process, and write out"):
         )
 
     idx = aggs.query('Scenario == "NT.Ref.R2"').index
-    aggs.loc[idx, "Variable"] = aggs.loc[idx, "Variable"].str.replace("\|Direct", "", regex = True)
+    aggs.loc[idx, "Variable"] = (
+            aggs
+            .loc[idx, "Variable"]
+            .str.replace("\|Direct", "", regex = True)
+        )
 
 
 
 
 
-aggs
-elec_df
+# elec_df is end_use_electricity_price
+# petro_df is the site_source_co2_conversions
+# price_floor_area_df is a concatnation of elec_df, petro_df, floor_area
+
 
 
 
 # FOR DEV WORK....
 aggs.to_parquet("aggs.parquet")
 aggs = pd.read_parquet("aggs.parquet")
-
-
-#baseline_agg_wide = (
-#        baseline_agg.astype({'year':'str'})
-#        .pivot_table(
-#            index = ["emf_string"],
-#            columns = ["year"],
-#            values = ["value"]
-#            )
-#        )
-#
-#baseline_agg_wide.columns = baseline_agg_wide.columns.droplevel(0)
-#baseline_agg_wide = baseline_agg_wide.reset_index()
-#baseline_agg_wide.to_csv("baseline_agg_wide.csv", index = False)
-#baseline_agg.to_csv("baseline_agg.csv", index = False)
 
 
 ################################################################################

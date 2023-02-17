@@ -10,10 +10,10 @@ scout_concepts = ScoutConcepts()
 timer = Timer()
 timer.tic("Process mseg_res_com_emm.json to a columized data form")
 
-timer.tic("Read in the baseline data and format as a DataFrame")
-DF = json_to_df(path = 'stock_energy_tech_data/mseg_res_com_emm.json')
-timer.toc()
+with Timer("Read in the baseline data and format as a DataFrame"):
+    DF = json_to_df(path = 'stock_energy_tech_data/mseg_res_com_emm.json')
 
+################################################################################
 timer.tic(task = "Explore and clean the data set")
 # explore the columns and get good names
 DF.query("lvl8.notna()").lvl0.value_counts() # likely region
@@ -40,7 +40,7 @@ DF.lvl2.isin(scout_concepts.fuel_types).any()
 # split this off to another DataFrame
 DF[ ~DF.lvl2.isin(scout_concepts.fuel_types) ].lvl2.value_counts()
 
-DF_metadata = DF[ ~DF.lvl2.isin(scout_concepts.fuel_types) ].reset_index(drop = True).copy()
+floor_area = DF[ ~DF.lvl2.isin(scout_concepts.fuel_types) ].reset_index(drop = True).copy()
 
 # set DF to be only the rows with a fuel type in position 2
 DF = DF[ DF.lvl2.isin(scout_concepts.fuel_types) ].reset_index(drop = True)
@@ -102,39 +102,37 @@ DF.loc[DF.query('year == "NA"').index, "year"] = pd.NA
 
 timer.toc()
 
-timer.tic(task = "Check the column contents")
-if not DF.region.isin(scout_concepts.regions).all():
-    raise Exception("DF.region contains more than just expected region values")
+with Timer(task = "Check the column contents"):
+    if not DF.region.isin(scout_concepts.regions).all():
+        raise Exception("DF.region contains more than just expected region values")
 
-if not DF.building_type.isin(scout_concepts.building_types).all():
-    raise Exception("DF.building_type contains more than just expected building_type values")
+    if not DF.building_type.isin(scout_concepts.building_types).all():
+        raise Exception("DF.building_type contains more than just expected building_type values")
 
-if not DF.fuel_type.isin(scout_concepts.fuel_types).all():
-    raise Exception("DF.fuel_type contains more than just expected fuel_type values")
+    if not DF.fuel_type.isin(scout_concepts.fuel_types).all():
+        raise Exception("DF.fuel_type contains more than just expected fuel_type values")
 
-if not DF.end_use.isin(scout_concepts.end_uses).all():
-    print(set(DF.end_use))
-    raise Exception("DF.end_use contains more than just expected end_use values")
+    if not DF.end_use.isin(scout_concepts.end_uses).all():
+        print(set(DF.end_use))
+        raise Exception("DF.end_use contains more than just expected end_use values")
 
-if not DF.supply_demand.isin(scout_concepts.supply_demand + [pd.NA]).all():
-    raise Exception("DF.supply_demand contains more than just expected supply_demand values")
+    if not DF.supply_demand.isin(scout_concepts.supply_demand + [pd.NA]).all():
+        raise Exception("DF.supply_demand contains more than just expected supply_demand values")
 
-if not DF.technology.isin(scout_concepts.technologies + [pd.NA]).all():
-    print(list(set(DF.query("~technology.isin(@scout_concepts.technologies)").technology)))
-    raise Exception("DF.technology contains more than just expected technology values")
+    if not DF.technology.isin(scout_concepts.technologies + [pd.NA]).all():
+        print(list(set(DF.query("~technology.isin(@scout_concepts.technologies)").technology)))
+        raise Exception("DF.technology contains more than just expected technology values")
 
-if not DF.energy_stock.isin(scout_concepts.energy_stock + [pd.NA]).all():
-    raise Exception("DF.energy_stock contains more than just expected energy_stock values")
+    if not DF.energy_stock.isin(scout_concepts.energy_stock + [pd.NA]).all():
+        raise Exception("DF.energy_stock contains more than just expected energy_stock values")
 
-if not DF.year.isin(scout_concepts.years + [pd.NA]).all():
-    print(list(set(DF.query("~year.isin(@scout_concepts.years)").year)))
-    raise Exception("DF.year contains more than just expected year values")
+    if not DF.year.isin(scout_concepts.years + [pd.NA]).all():
+        print(list(set(DF.query("~year.isin(@scout_concepts.years)").year)))
+        raise Exception("DF.year contains more than just expected year values")
 
-if not DF.value.apply(isfloat).all():
-    if not DF[~DF.value.isna()].value.apply(isfloat).all():
-        raise Exception("DF.value contains more than just expected floating point values")
-
-timer.toc()
+    if not DF.value.apply(isfloat).all():
+        if not DF[~DF.value.isna()].value.apply(isfloat).all():
+            raise Exception("DF.value contains more than just expected floating point values")
 
 # The year and the value columns can/should have the dtype changed to integer
 # and float respectively.  There is a string value "NA" in the year column that
@@ -145,8 +143,25 @@ DF.value = pd.to_numeric(DF.value)
 # Add on the EMF Scenario
 DF["Scenario"] = "NT.Ref.R2"
 
-timer.tic("Write baseline.parquet")
-DF.to_parquet('parquets/baseline.parquet')
+################################################################################
+# Clean up floor_area
+floor_area = (
+        floor_area
+        .drop(["lvl5", "lvl6", "lvl7", "lvl8"], axis = 1)
+        .rename({"lvl2" : "metric", "lvl3" : "year", "lvl4" : "value"}, axis = 1)
+        )
+floor_area.year = floor_area.year.astype("Int64")
+floor_area.value = pd.to_numeric(floor_area.value)
+floor_area
+
+################################################################################
+with Timer("Write parquets"):
+    DF.to_parquet('parquets/baseline.parquet')
+    floor_area.to_parquet('parquets/floor_area.parquet')
+
+################################################################################
 timer.toc()
-timer.toc()
+################################################################################
+#                                 END OF FILE                                  #
+################################################################################
 

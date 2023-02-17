@@ -2,7 +2,13 @@
 
 all: by_category_vs_overall.log aggs.parquet
 
-parquets/baseline.parquet:\
+parquets/emm_to_states.parquet : format_emm_to_states.py convert_data/geo_map/EMM_State_RowSums.txt
+	python $<
+
+parquets/emm_populaiton_weights.parquet : format_emm_population_weights.py convert_data/geo_map/EMM_National.txt
+	python $<
+
+parquets/baseline.parquet parquets/floor_area.parquet &:\
 	format_baseline.py\
 	utilities.py\
 	timer.py\
@@ -54,15 +60,18 @@ aggs.parquet:\
 	timer.py\
 	parquets/baseline.parquet\
 	parquets/MarketsSavingsByCategory.parquet\
-	parquets/CO2_intensity_of_electricity.parquet\
+	parquets/co2_intensity_of_electricity.parquet\
 	parquets/site_source_co2_conversions.parquet\
-	parquets/emm_region_emissions_prices.parquet
+	parquets/end_use_electricity_price.parquet\
+	parquets/floor_area.parquet\
+	parquets/emm_to_states.parquet\
+	parquets/emm_populaiton_weights.parquet
 	python $<
 
 clean:
 	/bin/rm -rf __pycache__
 	/bin/rm -f parquets/*.parquet
-	/bin/rm -f *.log 
+	/bin/rm -f *.log
 	/bin/rm -f convert_data/*.json
 	/bin/rm -f ecm_results/*.json
 	/bin/rm -f stock_energy_tech_data/*.json
