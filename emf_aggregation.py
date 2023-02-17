@@ -274,7 +274,31 @@ with Timer("Concat Aggregations, process, and write out"):
 # petro_df is the site_source_co2_conversions
 # price_floor_area_df is a concatnation of elec_df, petro_df, floor_area
 
+state_aggs = (
+        aggs
+        .merge(emm_to_states,
+               how = 'left',
+               left_on = 'Region',
+               right_on = 'EMM')
+        .drop("EMM", axis = 1)
+        .merge(emm_populaiton_weights,
+               how = 'left',
+               left_on = 'Region',
+               right_on = 'EMM')
+        .drop("EMM", axis = 1)
+        .assign(value = lambda x : x.value * x.emm_to_state_factor)
+        .groupby(["Scenario", "year", "Variable", "Units", "State"])
+        .agg({"value":"sum"})
+        .reset_index()
+        )
 
+state_aggs
+
+
+aggs
+emm_to_states
+emm_populaiton_weights
+state_aggs
 
 
 # FOR DEV WORK....
