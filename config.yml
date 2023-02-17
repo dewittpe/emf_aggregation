@@ -1,0 +1,8 @@
+scoutversion: v0.8
+ecm_results:
+  - scenario: 0by50.BSG.1.R2
+    file: ecm_results/ecm_results_1-1.json
+  - scenario: 0by50.BSG.2.R2
+    file: ecm_results/ecm_results_2.json
+  - scenario: 0by50.BSG.Adv.R2
+    file: ecm_results/ecm_results_3-1.json
