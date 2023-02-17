@@ -41,7 +41,7 @@ parquets/OnSiteGenerationByCategory.parquet parquets/OnSiteGenerationOverall.par
 	python $<
 
 %.json: %.json.gz
-	gunzip -dk $<
+	gunzip -dkf $<
 
 by_category_vs_overall.log:\
 	by_category_vs_overall.py\
