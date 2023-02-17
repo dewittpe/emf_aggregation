@@ -1,3 +1,5 @@
+import os, gzip
+import itertools
 import json
 import pandas as pd
 import numpy as np
@@ -171,3 +173,35 @@ def fns(x, ignorenan = False):
     y = five_number_summary(x, ignorenan)
     for k,v in y.items():
         print((k+":").ljust(8) + f"{v:.4e}")
+
+################################################################################
+def check_to_rebuild(targets, prerequisites):
+    """
+    Check to Rebuild
+
+    GNU make like check to see if the targets need to be made based on the last
+    modified date time stamp on the files in targets vs prerequisites.
+
+    Arguments:
+        targets:       files which should be rebuilt if older than any of the
+                       prerequisites
+        prerequisites: prerequisites
+
+    Return:
+        Boolean: True if any of the targets need to be rebuilt due to age or
+                      non-existence.
+                 False if all targets are younger than all prerequisites
+    """
+    # Want to exit if any of the prerequisites do not exist
+    e = [not os.path.exists(p) for p in prerequisites]
+    if any(e):
+        raise FileNotFoundError(list(itertools.compress(prerequisites, e)))
+
+    # If any target does not exist then return True
+    e = [not os.path.exists(p) for p in targets]
+    if any(e):
+        return True
+
+    pt = max([os.path.getctime(p) for p in prerequisites])
+    tt = min([os.path.getctime(p) for p in targets])
+    return(tt < pt)
