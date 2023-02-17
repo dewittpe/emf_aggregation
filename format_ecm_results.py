@@ -1,4 +1,5 @@
 import pandas as pd
+import yaml
 from utilities import json_to_df
 from utilities import isfloat
 from utilities import whats_in_a_series
@@ -6,6 +7,15 @@ from scout_concepts import ScoutConcepts
 from timer import Timer
 
 scout_concetps = ScoutConcepts()
+
+with open('config.yml', 'r') as f:
+    config = yaml.load(f, Loader = yaml.loader.SafeLoader)
+    print(config)
+
+
+config
+config.Node()
+
 
 timer = Timer()
 timer.tic("Process ecm_results_1-1.json, ecm_results_2.json, and ecm_results_3-1.json")

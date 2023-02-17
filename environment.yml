@@ -3,6 +3,9 @@ channels:
   - defaults
 dependencies:
   - pyarrow
+  - pip
   - numpy
   - pandas
   - matplotlib
+  - pip:
+    - PyYAML
