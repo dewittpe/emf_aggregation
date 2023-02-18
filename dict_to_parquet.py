@@ -6,6 +6,7 @@
 import pandas as pd
 from utilities import json_to_df
 from utilities import isfloat
+from utilities import remove_empty_colums
 from scout_concepts import ScoutConcepts
 
 ################################################################################
@@ -130,6 +131,289 @@ def d2p_floor_area(df, scenario):
     return floor_area
 
 ################################################################################
-#                                 END OF FILE                                  #
+def d2p_emm_to_states():
+    emm_to_states = (
+            pd.read_csv('convert_data/geo_map/EMM_State_RowSums.txt', sep = '\t')
+            .rename({"State" : "EMM"}, axis = 1)
+            .melt(id_vars = "EMM",
+                  var_name = "State",
+                  value_name = 'emm_to_state_factor')
+            )
+
+    emm_to_states.to_parquet("parquets/emm_to_states.parquet")
+    return emm_to_states
+
+################################################################################
+def d2p_emm_population_weights():
+    emm_populaiton_weights = (
+            pd.read_csv('convert_data/geo_map/EMM_National.txt', sep = '\t')
+            )
+
+    emm_populaiton_weights.to_parquet("parquets/emm_populaiton_weights.parquet")
+    return emm_populaiton_weights
+
+################################################################################
+def d2p_emm_region_emission_prices():
+    df = json_to_df(path = 'convert_data/emm_region_emissions_prices.json.gz')
+    df = (
+            df
+            .query('lvl1 == "data"')
+            .drop(["lvl1"], axis = 1)
+            .rename({"lvl0" : "conversion",
+                     "lvl2" : "building_class",
+                     "lvl3" : "region",
+                     "lvl4": "year",
+                     "lvl5": "conversion_factor"},
+                    axis = 1)
+        )
+
+    # There are rows where the building class column contains region data,
+    # shift the year and conversion_factor data over one column to the right
+    idx = df.query('~building_class.isin(["residential", "commercial"])').index
+    df.loc[idx, "conversion_factor"] = df.loc[idx, "year"]
+    df.loc[idx, "year"] = df.loc[idx, "region"]
+    df.loc[idx, "region"] = df.loc[idx, "building_class"]
+    df.loc[idx, "building_class"] = pd.NA
+
+    # set the building_class to title case to match the general concept else where
+    df.building_class = df.building_class.str.title()
+
+    df.conversion_factor = df.conversion_factor.astype(float)
+    df.year = df.year.astype("Int64")
+
+    # Some new columns:
+    df["Variable"] = pd.NA
+    df["Unit"] = pd.NA
+
+    # For End-use electricity prices
+    kWh_GJ_conv = 1e6/3600  # convert from kWh to GJ
+    USD_pres_val_conv = 1/1.023  # convert from 2019 to 2018 dollars (Scout data are in US$2019 not US$2018)
+
+    idx = df.query("conversion == 'End-use electricity price'").index
+    df.loc[idx, "conversion_factor"] *= kWh_GJ_conv * USD_pres_val_conv
+    df.loc[idx, "Variable"] = "Price|Final Energy|" + df.loc[idx, "building_class"] + "|Electricity"
+    df.loc[idx, "Unit"] = "US$2018/GJ"
+
+    # write out parquet
+    df.to_parquet('parquets/emm_region_emissions_prices.parquet')
+
+    # return the df
+    return df
+
+################################################################################
+def d2p_site_source_co2_conversion():
+    df = json_to_df(path = 'convert_data/site_source_co2_conversions.json')
+
+    df = (
+            df
+            .query('lvl2 == "data"')
+            .drop(["lvl2"], axis = 1)
+            .rename({"lvl0" : "fuel_type",
+                     "lvl1" : "conversion",
+                     "lvl3" : "building_class",
+                     "lvl4": "year",
+                     "lvl5": "conversion_factor"},
+                    axis = 1)
+        )
+
+    # There are rows where the building class column contains year data,
+    # shift the year and conversion_factor data over one column to the right
+    idx = df.query('~building_class.isin(["residential", "commercial"])').index
+    df.loc[idx, "conversion_factor"] = df.loc[idx, "year"]
+    df.loc[idx, "year"] = df.loc[idx, "building_class"]
+    df.loc[idx, "building_class"] = pd.NA
+
+    # set the building_class to title case to match the general concept else where
+    df.building_class = df.building_class.str.title()
+
+    df.conversion_factor = df.conversion_factor.astype(float)
+    df.year = df.year.astype("Int64")
+
+    df.to_parquet('parquets/site_source_co2_conversions.parquet')
+
+    return df
+
+################################################################################
+def d2p_ecm_results(df):
+    scout_concepts = ScoutConcepts()
+
+    # Split up the df into several conceptually different data sets
+    queries = {
+            'OnSiteGenerationByCategory': 'lvl0 == "On-site Generation" & lvl2 == "By Category"',
+            'OnSiteGenerationOverall': 'lvl0 == "On-site Generation" & lvl2 == "Overall"',
+            'FinancialMetrics': 'lvl1 == "Financial Metrics"',
+            'FilterVariables' : 'lvl1 == "Filter Variables"',
+            'MarketsSavingsByCategory': 'lvl1 == "Markets and Savings (by Category)"',
+            'MarketsSavingsOverall': 'lvl1 == "Markets and Savings (Overall)"',
+            }
+
+    OnSiteGenerationByCategory = (
+            df
+            .query(queries["OnSiteGenerationByCategory"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    OnSiteGenerationOverall = (
+            df
+            .query(queries["OnSiteGenerationOverall"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    FinancialMetrics = (
+            df
+            .query(queries["FinancialMetrics"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    MarketsSavingsByCategory = (
+            df
+            .query(queries["MarketsSavingsByCategory"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    MarketsSavingsOverall = (
+            df
+            .query(queries["MarketsSavingsOverall"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    FilterVariables = (
+            df
+            .query(queries["FilterVariables"])
+            .copy()
+            .reset_index(drop = True)
+            )
+
+    # remove columns that have no data
+    OnSiteGenerationByCategory = remove_empty_colums(OnSiteGenerationByCategory)
+    OnSiteGenerationOverall    = remove_empty_colums(OnSiteGenerationOverall)
+    FinancialMetrics           = remove_empty_colums(FinancialMetrics)
+    MarketsSavingsByCategory   = remove_empty_colums(MarketsSavingsByCategory)
+    MarketsSavingsOverall      = remove_empty_colums(MarketsSavingsOverall)
+    FilterVariables            = remove_empty_colums(FilterVariables)
+
+
+    ########################################
+    # Clean On-site Generation By Category
+    OnSiteGenerationByCategory = (
+            OnSiteGenerationByCategory
+            .drop(columns = ["lvl0", "lvl2"])
+            .rename(columns = {"lvl1":"outcome_metric",
+                               "lvl3":"region",
+                               "lvl4":"building_type",
+                               "lvl5":"year",
+                               "lvl6":"value"})
+            )
+    OnSiteGenerationByCategory.year = OnSiteGenerationByCategory.year.astype("Int64")
+    OnSiteGenerationByCategory.value = OnSiteGenerationByCategory.value.astype(float)
+
+    ########################################
+    # On-site Generation Overall
+    OnSiteGenerationOverall = (
+            OnSiteGenerationOverall
+            .drop(columns = ["lvl0", "lvl2"])
+            .rename(columns = {"lvl1":"outcome_metric",
+                               "lvl3":"year",
+                               "lvl4":"value"})
+            )
+    OnSiteGenerationOverall.year = OnSiteGenerationOverall.year.astype("Int64")
+    OnSiteGenerationOverall.value = OnSiteGenerationOverall.value.astype(float)
+
+
+    ########################################
+    # FinancialMetrics
+    FinancialMetrics = (
+            FinancialMetrics
+            .drop(columns = ["lvl1"])
+            .rename(columns = {"lvl0":"ecm",
+                               "lvl2":"outcome_metric",
+                               "lvl3":"year",
+                               "lvl4":"value"})
+            )
+    FinancialMetrics.year = FinancialMetrics.year.astype("Int64")
+    FinancialMetrics.value = FinancialMetrics.value.astype(float)
+
+    ########################################
+    # MarketsSavingsByCategory
+    MarketsSavingsByCategory = (
+            MarketsSavingsByCategory
+            .drop(columns = ["lvl1"])
+            .rename(columns = {"lvl0" : "ecm",
+                               "lvl2" : "adoption_scenario",
+                               "lvl3" : "outcome_metric",
+                               "lvl4" : "region",
+                               "lvl5" : "building_type",
+                               "lvl6" : "end_use"
+                               })
+            )
+
+
+    # there are some rows with no fuel_type, lvl7 has year values.  move the year
+    # and values
+    MarketsSavingsByCategory.query('lvl7.isin(@scout_concepts.years)')
+    idx = MarketsSavingsByCategory.query('lvl7.isin(@scout_concepts.years)').index
+    MarketsSavingsByCategory.loc[idx, "lvl9"] = MarketsSavingsByCategory.loc[idx, "lvl8"]
+    MarketsSavingsByCategory.loc[idx, "lvl8"] = MarketsSavingsByCategory.loc[idx, "lvl7"]
+    MarketsSavingsByCategory.loc[idx, "lvl7"] = pd.NA
+
+    MarketsSavingsByCategory = (
+            MarketsSavingsByCategory
+            .rename(columns = {"lvl7":"fuel_type",
+                               "lvl8":"year",
+                               "lvl9":"value"})
+            )
+
+    MarketsSavingsByCategory.year = MarketsSavingsByCategory.year.astype("Int64")
+    MarketsSavingsByCategory.value = MarketsSavingsByCategory.value.astype(float)
+
+
+    ########################################
+    # MarketsSavingsOverall
+    MarketsSavingsOverall = (
+            MarketsSavingsOverall
+            .drop(columns = ["lvl1"])
+            .rename(columns = {"lvl0":"ecm",
+                               "lvl2":"adoption_scenario",
+                               "lvl3":"outcome_metric",
+                               "lvl4":"year",
+                               "lvl5":"value"
+                               })
+            )
+    MarketsSavingsOverall.year = MarketsSavingsOverall.year.astype("Int64")
+    MarketsSavingsOverall.value = MarketsSavingsOverall.value.astype(float)
+
+    ########################################
+    # FilterVariables
+    FilterVariables = (
+            FilterVariables
+            .drop(columns = ["lvl1"])
+            .rename(columns = {"lvl0" : "ecm",
+                               "lvl2" : "concept",
+                               "lvl3" : "values"})
+            )
+
+    ########################################
+    # Writting parquet files
+    OnSiteGenerationByCategory.to_parquet('parquets/OnSiteGenerationByCategory.parquet')
+    OnSiteGenerationOverall.to_parquet('parquets/OnSiteGenerationOverall.parquet')
+    MarketsSavingsByCategory.to_parquet('parquets/MarketsSavingsByCategory.parquet')
+    MarketsSavingsOverall.to_parquet('parquets/MarketsSavingsOverall.parquet')
+    FilterVariables.to_parquet('parquets/FilterVariables.parquet')
+    FinancialMetrics.to_parquet('parquets/FinancialMetrics.parquet')
+
+    return [OnSiteGenerationByCategory,
+            OnSiteGenerationOverall,
+            MarketsSavingsByCategory,
+            MarketsSavingsOverall,
+            FilterVariables,
+            FinancialMetrics]
+
+################################################################################
+#                                 End of File                                  #
 ################################################################################
 

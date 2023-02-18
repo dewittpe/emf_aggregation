@@ -205,3 +205,10 @@ def check_to_rebuild(targets, prerequisites):
     pt = max([os.path.getctime(p) for p in prerequisites])
     tt = min([os.path.getctime(p) for p in targets])
     return(tt < pt)
+
+################################################################################
+def remove_empty_colums(df):
+    for c in df.columns:
+        if df[c].isna().all():
+            df = df.drop(columns = c)
+    return df
