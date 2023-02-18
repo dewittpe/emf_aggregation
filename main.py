@@ -11,6 +11,9 @@ from dict_to_parquet import d2p_emm_population_weights
 from dict_to_parquet import d2p_emm_region_emission_prices
 from dict_to_parquet import d2p_site_source_co2_conversion
 from dict_to_parquet import d2p_ecm_results
+from scout_emf_mappings import ScoutEMFMappings
+from scout_concepts import ScoutConcepts
+from scout_concepts import ScoutMappings
 
 
 if __name__ == "__main__":
@@ -18,6 +21,11 @@ if __name__ == "__main__":
     # Default Values for command line arguments
     config_path = "config.yml"
     verbose = False
+
+    # needed mappings and concepts
+    scout_emf_mappings = ScoutEMFMappings()
+    scout_concecpts = ScoutConcepts()
+    scout_mappings = ScoutMappings()
 
     # get arguments from the command line
     try:
@@ -68,7 +76,7 @@ if __name__ == "__main__":
     else:
         emm_populaiton_weights = pd.read_parquet(trgts[0])
 
-    # the following contains both the 
+    # the following contains both the
     # co2_intensity_of_electricity and end_use_electricity_price
     trgts = ['parquets/emm_region_emissions_prices.parquet']
     prqts = ['convert_data/emm_region_emissions_prices.json.gz', 'dict_to_parquet.py']
@@ -133,7 +141,216 @@ if __name__ == "__main__":
 
     MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
 
-    print(MarketsSavingsByCategory)
-            
+    # Prepare the data for aggregation
+    with Timer("Prepare Data For Aggregation", verbose = verbose):
+        # sub set to the years endingin 5 or 0
+        baseline = baseline[baseline.year % 5 == 0].reset_index(drop = True)
+        MarketsSavingsByCategory = (
+                MarketsSavingsByCategory[MarketsSavingsByCategory.year % 5 == 0]
+                .reset_index(drop = True)
+                )
 
-            
+        ##########
+        # baseline
+        baseline = (
+                baseline
+                .merge(scout_mappings.building_type_class)
+                .merge(scout_emf_mappings.emf_end_uses,
+                       how = 'left',
+                       left_on = 'end_use',
+                       right_on = 'scout_end_use')
+                .drop('scout_end_use', axis = 1)
+                .merge(scout_emf_mappings.other_fuel_type,
+                      how = 'left',
+                       left_on = ['fuel_type', 'end_use', 'technology'],
+                       right_on = ['scout_other_fuel_type', 'scout_end_use', 'scout_technology']
+                       )
+                .drop(['scout_other_fuel_type', 'scout_end_use', 'scout_technology'], axis = 1)
+                .merge(scout_emf_mappings.non_other_fuel_type,
+                       how = 'left',
+                       left_on = ['fuel_type'],
+                       right_on = ['scout_non_other_fuel_type'],
+                       suffixes = ("", "_2")
+                       )
+                .drop(['scout_non_other_fuel_type'], axis = 1)
+                .merge(scout_emf_mappings.emf_direct_indirect_fuel,
+                       how = 'left',
+                       left_on = 'fuel_type',
+                       right_on = 'scout_fuel_type')
+                .merge(
+                    emm_region_emissions_prices.query('conversion == "CO2 intensity of electricity"')[["region", "year", "conversion_factor"]],
+                    #CO2_intensity_of_electricity[["region", "year", "conversion_factor"]],
+                       how = 'left',
+                       on = ['region', 'year'])
+                .rename(columns = {"conversion_factor" : "CO2_intensity_of_electricity"})
+            )
+
+        # Above merges do have extra columns resulting from the non_other and other fuel
+        # types.  Coalesce these columns and drop the extra columns.
+        baseline.emf_fuel_type = baseline.emf_fuel_type.fillna(baseline.emf_fuel_type_2)
+        baseline.EJ_to_mt_CO2 = baseline.EJ_to_mt_CO2.fillna(baseline.EJ_to_mt_CO2_2)
+        baseline = baseline.drop(['emf_fuel_type_2', 'EJ_to_mt_CO2_2'], axis = 1)
+
+        # In the above merge the CO2_intensity_of_electricity is not relevent when the
+        # EMF fuel type is not electricity.  Correct that here by settting that factor
+        # to 1.0 when emf_fuel_type != "Electricity"
+        idx = baseline.query("emf_fuel_type != 'Electricity'").index
+        baseline.loc[idx, "CO2_intensity_of_electricity"] = 1.0
+
+        # create a EJ and CO2 columns
+        baseline["EJ"] = baseline["value"] * scout_emf_mappings.MMBtu_to_EJ
+
+        baseline["CO2"] = (
+                baseline.EJ *
+                baseline.EJ_to_mt_CO2 *
+                baseline.CO2_intensity_of_electricity
+            )
+
+        ##########
+        # results
+        MarketsSavingsByCategory = (
+                MarketsSavingsByCategory
+                .merge(scout_emf_mappings.emf_base_strings, how = "inner")
+                .merge(scout_mappings.building_type_class, how = "left", on = "building_type")
+                .merge(scout_emf_mappings.emf_end_uses,
+                       how = "left",
+                       left_on = "end_use",
+                       right_on = "scout_end_use")
+                .drop("scout_end_use", axis = 1)
+                .merge(scout_emf_mappings.emf_direct_indirect_fuel,
+                       how = "left",
+                       left_on = "fuel_type",
+                       right_on = "scout_fuel_type")
+                .drop("scout_fuel_type", axis = 1)
+                .merge(scout_emf_mappings.non_other_fuel_type,
+                       how = 'left',
+                       left_on = ['fuel_type'],
+                       right_on = ['scout_non_other_fuel_type'],
+                       suffixes = ("", "_2")
+                       )
+                .drop(['scout_non_other_fuel_type'], axis = 1)
+                # TODO: build out end use, technology mappings
+                )
+
+        idx = MarketsSavingsByCategory.query('outcome_metric.str.contains("MMBtu")').index
+        MarketsSavingsByCategory.loc[idx, "value"] *= scout_emf_mappings.MMBtu_to_EJ
+        MarketsSavingsByCategory.outcome_metric = (
+                MarketsSavingsByCategory
+                .outcome_metric
+                .str.replace("MMBtu", "EJ")
+                )
+
+    with Timer("Aggregate Baseline Data for EMF Summary", verbose = verbose):
+        groupings = [
+                {
+                    'emf_base_string' : 'Final Energy|Buildings',
+                    'acol' : 'EJ',
+                    'groups' : [
+                        ["Scenario", "region",                                                   "year"],
+                        ["Scenario", "region",                                  "emf_fuel_type", "year"],
+                        ["Scenario", "region", "building_class",                                 "year"],
+                        ["Scenario", "region", "building_class",                "emf_fuel_type", "year"],
+                        ["Scenario", "region", "building_class", "emf_end_use", "emf_fuel_type", "year"]
+                    ]
+                },
+                {
+                    'emf_base_string' : 'Emissions|CO2|Energy|Demand|Buildings',
+                    'acol' : 'CO2',
+                    'groups' : [
+                            ["Scenario", "region",                                                              "year"],
+                            ["Scenario", "region",                                  "emf_direct_indirect_fuel", "year"],
+                            ["Scenario", "region", "building_class",                                            "year"],
+                            ["Scenario", "region", "building_class",                "emf_direct_indirect_fuel", "year"],
+                            ["Scenario", "region", "building_class", "emf_end_use",                             "year"],
+                            ["Scenario", "region", "building_class", "emf_end_use", "emf_direct_indirect_fuel", "year"]
+                        ]
+                }
+                ]
+
+        baseline_aggs = [
+                    baseline
+                    .groupby(grouping)
+                    .agg({g['acol']:"sum"})
+                    .rename({g['acol']:"value"}, axis = 1)
+                    .assign(Variable = lambda x: g['emf_base_string'])
+                    .reset_index()
+                    for g in groupings
+                    for grouping in g["groups"]
+                ]
+
+        baseline_aggs = pd.concat(baseline_aggs)
+
+        baseline_aggs["Variable"] = (
+                (
+                baseline_aggs["Variable"] +
+                "|" + baseline_aggs.building_class.fillna("") +
+                "|" + baseline_aggs.emf_end_use.fillna("") +
+                "|" + baseline_aggs.emf_fuel_type.fillna("") +
+                "|" + baseline_aggs.emf_direct_indirect_fuel.fillna("")
+                )
+                .str.replace("\|{2,}", "|", regex = True)
+                .str.replace("\|$", "", regex = True)
+                )
+
+    with Timer("Aggregate MarketsSavingsByCategory for EMF Summary", verbose = verbose):
+        querys_groups = [
+                {
+                    'query' : 'emf_base_string.isin(["Emissions|CO2|Energy|Demand|Buildings", "Final Energy|Buildings"])',
+                    'groups' : [
+                            ['Scenario', 'region', 'emf_base_string', 'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class',                                                             'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                                              'year']
+                        ]
+                },
+                {
+                    'query' : 'emf_base_string == "Emissions|CO2|Energy|Demand|Buildings"',
+                    'groups' : [
+                            ['Scenario', 'region', 'emf_base_string',                                  'emf_direct_indirect_fuel',                  'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class',                'emf_direct_indirect_fuel',                  'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use', 'emf_direct_indirect_fuel',                  'year']
+                        ]
+                },
+                {
+                    'query' : 'emf_base_string == "Final Energy|Buildings"',
+                    'groups' : [
+                            ['Scenario', 'region', 'emf_base_string',                                                              'emf_fuel_type', 'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class',                                            'emf_fuel_type', 'year'],
+                            ['Scenario', 'region', 'emf_base_string', 'building_class', 'emf_end_use',                             'emf_fuel_type', 'year']
+                        ]
+                }
+                ]
+
+        aggs = [
+                MarketsSavingsByCategory
+                .query(q["query"])
+                .groupby(g)
+                .agg({"value":"sum"})
+                .reset_index()
+                for q in querys_groups
+                for g in q["groups"]
+                ]
+
+        aggs = pd.concat(aggs)
+
+        aggs["Variable"] = (
+                    (
+                        aggs.emf_base_string +
+                        "|" + aggs.building_class.fillna("") +
+                        "|" + aggs.emf_end_use.fillna("") +
+                        "|" + aggs.emf_direct_indirect_fuel.fillna("") +
+                        "|" + aggs.emf_fuel_type.fillna("")
+                    )
+                    .str.replace("\|{2,}", "|", regex = True)
+                    .str.replace("\|$", "", regex = True)
+                )
+
+    aggs = (
+            pd.concat([baseline_aggs, aggs])
+            .rename({"region":"Region"}, axis = 1)
+           )
+
+    print(aggs)
+
+
+
+
