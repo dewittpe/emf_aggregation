@@ -145,14 +145,14 @@ def d2p_emm_to_states():
 
 ################################################################################
 def d2p_emm_population_weights():
-    emm_populaiton_weights = (
+    emm_population_weights = (
             pd.read_csv('convert_data/geo_map/EMM_National.txt', sep = '\t')
             .rename(columns = {"Total Population" : "population",
                                "Population Weight" : "weight"})
             )
 
-    emm_populaiton_weights.to_parquet("parquets/emm_populaiton_weights.parquet")
-    return emm_populaiton_weights
+    emm_population_weights.to_parquet("parquets/emm_population_weights.parquet")
+    return emm_population_weights
 
 ################################################################################
 def d2p_emm_region_emission_prices():

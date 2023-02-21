@@ -1,11 +1,17 @@
 scoutversion: v0.8
+
 baseline:
   - scenario: NT.Ref.R2
     file: stock_energy_tech_data/mseg_res_com_emm.json.gz
 ecm_results:
   - scenario: 0by50.BSG.1.R2
+    co2_conversions: <filepath, a known default if this is not specified>
     file: ecm_results/ecm_results_1-1.json.gz
   - scenario: 0by50.BSG.2.R2
+    co2_conversions: <filepath>
     file: ecm_results/ecm_results_2.json.gz
   - scenario: 0by50.BSG.Adv.R2
     file: ecm_results/ecm_results_3-1.json.gz
+
+
+

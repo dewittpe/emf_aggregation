@@ -66,15 +66,17 @@ if __name__ == "__main__":
         with Timer("Formatting EMM states", verbose = verbose):
             emm_to_states = d2p_emm_to_states()
     else:
-        emm_to_states = pd.read_parquet(trgts[0])
+        with Timer("Reading " + trgts[0], verbose = verbose):
+            emm_to_states = pd.read_parquet(trgts[0])
 
     trgts = ['parquets/emm_population_weights.parquet']
     prqts = ['convert_data/geo_map/EMM_National.txt', 'dict_to_parquet.py']
     if check_to_rebuild(trgts, prqts):
         with Timer("Formatting EMM Population Weights", verbose = verbose):
-            emm_to_states = d2p_emm_population_weights()
+            emm_population_weights = d2p_emm_population_weights()
     else:
-        emm_population_weights = pd.read_parquet(trgts[0])
+        with Timer("Reading " + trgts[0], verbose = verbose):
+            emm_population_weights = pd.read_parquet(trgts[0])
 
     # the following contains both the
     # co2_intensity_of_electricity and end_use_electricity_price
@@ -84,7 +86,8 @@ if __name__ == "__main__":
         with Timer("Formatting EMM Region Emission Prices", verbose = verbose):
             emm_region_emissions_prices = d2p_emm_region_emission_prices()
     else:
-        emm_region_emissions_prices = pd.read_parquet(trgts[0])
+        with Timer("Reading " + trgts[0], verbose = verbose):
+            emm_region_emissions_prices = pd.read_parquet(trgts[0])
 
     trgts = ['parquets/site_source_co2_conversions.parquet']
     prqts = ['convert_data/site_source_co2_conversions.json.gz', 'dict_to_parquet.py']
@@ -92,7 +95,8 @@ if __name__ == "__main__":
         with Timer("Formatting Site Source CO2 Conversions", verbose = verbose):
             site_source_co2_conversions = d2p_site_source_co2_conversion()
     else:
-        site_source_co2_conversions = pd.read_parquet(trgts[0])
+        with Timer("Reading " + trgts[0], verbose = verbose):
+            site_source_co2_conversions = pd.read_parquet(trgts[0])
 
     # baseline data as defined in the config file
     # Pre-process baseline data.
@@ -114,8 +118,9 @@ if __name__ == "__main__":
             floor_area = pd.concat(floor_area)
             floor_area.to_parquet('parquets/floor_area.parquet')
     else:
-        baseline = pd.read_parquet('parquets/baseline.parquet')
-        floor_area = pd.read_parquet('parquets/floor_area.parquet')
+        with Timer("Reading in baseline and floor_area parquets", verbose = verbose):
+            baseline = pd.read_parquet('parquets/baseline.parquet')
+            floor_area = pd.read_parquet('parquets/floor_area.parquet')
 
     # Results Data
     # Pre-process baseline data.
@@ -138,8 +143,9 @@ if __name__ == "__main__":
             DF = pd.concat(DFs, keys = s)
             DF = DF.reset_index(level = 0, names = ["Scenario"])
             d2p_ecm_results(DF)
-
-    MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
+    
+    with Timer("Reading in MarketsSavingsByCategory", verbose = verbose):
+        MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
 
     # Prepare the data for aggregation
     with Timer("Prepare Data For Aggregation", verbose = verbose):
@@ -406,20 +412,20 @@ if __name__ == "__main__":
                        right_on = 'EMM')
                 .drop("EMM", axis = 1)
                 .assign(Variable = lambda x: x.value * x.weight)
-                .groupby(["Model", "Scenario", "year", "Variable", "Units")
+                .groupby(["Model", "Scenario", "year", "Variable", "Units"])
                 .agg({"value":"sum"})
-                .assign('Region' = lambda x: 'United States')
+                .assign(Region = lambda x: 'United States')
                 .reset_index()
                 )
 
-    with Timer("Write to files"):
+    with Timer("Write to files", verbose = verbose):
         if not os.path.exists("emf_output"):
-            os.makedirs("parquets")
+            os.makedirs("emf_output")
 
         pd.concat([national_aggs, state_aggs]).to_excel("emf_output/IAMC_format.xlsx")
 
 
-    state_aggs
+
 
 
 
