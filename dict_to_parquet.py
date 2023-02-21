@@ -102,7 +102,7 @@ def d2p_baseline(df, scenario):
     # The year and the value columns can/should have the dtype changed to integer
     # and float respectively.  There is a string value "NA" in the year column that
     # needs to be modified first
-    df.year = df.year.astype("Int64")
+    df.year = df.year.astype(int)
     df.value = pd.to_numeric(df.value)
 
     # Add on the EMF Scenario
@@ -125,7 +125,7 @@ def d2p_floor_area(df, scenario):
                      'lvl4':'value'},
                     axis = 1)
             )
-    floor_area.year = floor_area.year.astype("Int64")
+    floor_area.year = floor_area.year.astype(int)
     floor_area.value = pd.to_numeric(floor_area.value)
     floor_area["Scenario"] = scenario
     return floor_area
@@ -179,7 +179,7 @@ def d2p_emm_region_emission_prices():
     df.building_class = df.building_class.str.title()
 
     df.conversion_factor = df.conversion_factor.astype(float)
-    df.year = df.year.astype("Int64")
+    df.year = df.year.astype(int)
 
     # Some new columns:
     df["Variable"] = pd.NA
@@ -227,7 +227,7 @@ def d2p_site_source_co2_conversion():
     df.building_class = df.building_class.str.title()
 
     df.conversion_factor = df.conversion_factor.astype(float)
-    df.year = df.year.astype("Int64")
+    df.year = df.year.astype(int)
 
     df.to_parquet('parquets/site_source_co2_conversions.parquet')
 
@@ -309,7 +309,7 @@ def d2p_ecm_results(df):
                                "lvl5":"year",
                                "lvl6":"value"})
             )
-    OnSiteGenerationByCategory.year = OnSiteGenerationByCategory.year.astype("Int64")
+    OnSiteGenerationByCategory.year = OnSiteGenerationByCategory.year.astype(int)
     OnSiteGenerationByCategory.value = OnSiteGenerationByCategory.value.astype(float)
 
     ########################################
@@ -321,7 +321,7 @@ def d2p_ecm_results(df):
                                "lvl3":"year",
                                "lvl4":"value"})
             )
-    OnSiteGenerationOverall.year = OnSiteGenerationOverall.year.astype("Int64")
+    OnSiteGenerationOverall.year = OnSiteGenerationOverall.year.astype(int)
     OnSiteGenerationOverall.value = OnSiteGenerationOverall.value.astype(float)
 
 
@@ -335,7 +335,7 @@ def d2p_ecm_results(df):
                                "lvl3":"year",
                                "lvl4":"value"})
             )
-    FinancialMetrics.year = FinancialMetrics.year.astype("Int64")
+    FinancialMetrics.year = FinancialMetrics.year.astype(int)
     FinancialMetrics.value = FinancialMetrics.value.astype(float)
 
     ########################################
@@ -368,7 +368,7 @@ def d2p_ecm_results(df):
                                "lvl9":"value"})
             )
 
-    MarketsSavingsByCategory.year = MarketsSavingsByCategory.year.astype("Int64")
+    MarketsSavingsByCategory.year = MarketsSavingsByCategory.year.astype(int)
     MarketsSavingsByCategory.value = MarketsSavingsByCategory.value.astype(float)
 
 
@@ -384,7 +384,7 @@ def d2p_ecm_results(df):
                                "lvl5":"value"
                                })
             )
-    MarketsSavingsOverall.year = MarketsSavingsOverall.year.astype("Int64")
+    MarketsSavingsOverall.year = MarketsSavingsOverall.year.astype(int)
     MarketsSavingsOverall.value = MarketsSavingsOverall.value.astype(float)
 
     ########################################
