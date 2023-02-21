@@ -68,13 +68,13 @@ if __name__ == "__main__":
     else:
         emm_to_states = pd.read_parquet(trgts[0])
 
-    trgts = ['parquets/emm_populaiton_weights.parquet']
+    trgts = ['parquets/emm_population_weights.parquet']
     prqts = ['convert_data/geo_map/EMM_National.txt', 'dict_to_parquet.py']
     if check_to_rebuild(trgts, prqts):
         with Timer("Formatting EMM Population Weights", verbose = verbose):
             emm_to_states = d2p_emm_population_weights()
     else:
-        emm_populaiton_weights = pd.read_parquet(trgts[0])
+        emm_population_weights = pd.read_parquet(trgts[0])
 
     # the following contains both the
     # co2_intensity_of_electricity and end_use_electricity_price
@@ -344,12 +344,86 @@ if __name__ == "__main__":
                     .str.replace("\|$", "", regex = True)
                 )
 
-    aggs = (
-            pd.concat([baseline_aggs, aggs])
-            .rename({"region":"Region"}, axis = 1)
-           )
+    with Timer("Clean up Aggregated Results", verbose = verbose):
+        aggs = (
+                pd.concat([baseline_aggs, aggs])
+                .rename({"region":"Region"}, axis = 1)
+               )
 
-    print(aggs)
+        # add model name and units columns
+        aggs["Model"] = config.get("scoutversion")
+        # for units, set all rows to the units for 'Final Energy' and then correct the
+        # needed rows for 'Emmissions'
+        aggs["Units"] = "EJ/yr"
+        idx = aggs.query("Variable.str.contains('Emmissions')").index
+        aggs.loc[idx, "Units"] = "Mt CO2\yr"
+
+        # Remove extraneous rows from baseline and modify CO2 emissions
+        # to report direct emissions without the 'Direct' tag (and drop
+        # the total direct + indirect emissions values)
+
+        totco2_regex = '^Emissions\|.*\|(?:Direct|Indirect)$|^(?!Emissions).*'
+
+        aggs = (
+            aggs
+            .query('~((Scenario == "NT.Ref.R2") & Variable.str.contains(@totco2_regex, regex = True))')
+            .query('~((Scenario == "NT.Ref.R2") & Variable.str.endswith("|Cooling|Gas"))')
+            )
+
+        idx = aggs.query('Scenario == "NT.Ref.R2"').index
+        aggs.loc[idx, "Variable"] = (
+                aggs
+                .loc[idx, "Variable"]
+                .str.replace("\|Direct", "", regex = True)
+            )
+
+
+    with Timer("Translate to State Level results", verbose = verbose):
+        state_aggs = (
+                aggs
+                .merge(emm_to_states,
+                       how = 'left',
+                       left_on = 'Region',
+                       right_on = 'EMM')
+                .drop("EMM", axis = 1)
+                .merge(emm_population_weights,
+                       how = 'left',
+                       left_on = 'Region',
+                       right_on = 'EMM')
+                .drop("EMM", axis = 1)
+                .assign(value = lambda x : x.value * x.emm_to_state_factor)
+                .groupby(["Model", "Scenario", "year", "Variable", "Units", "State"])
+                .agg({"value":"sum"})
+                .reset_index()
+                )
+
+    with Timer("Translate to National results", verbose = verbose):
+        national_aggs = (
+                aggs
+                .merge(emm_population_weights,
+                       how = 'left',
+                       left_on = 'Region',
+                       right_on = 'EMM')
+                .drop("EMM", axis = 1)
+                .assign(Variable = lambda x: x.value * x.weight)
+                .groupby(["Model", "Scenario", "year", "Variable", "Units")
+                .agg({"value":"sum"})
+                .assign('Region' = lambda x: 'United States')
+                .reset_index()
+                )
+
+    with Timer("Write to files"):
+        if not os.path.exists("emf_output"):
+            os.makedirs("parquets")
+
+        pd.concat([national_aggs, state_aggs]).to_excel("emf_output/IAMC_format.xlsx")
+
+
+    state_aggs
+
+
+
+
 
 
 

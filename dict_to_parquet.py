@@ -147,6 +147,8 @@ def d2p_emm_to_states():
 def d2p_emm_population_weights():
     emm_populaiton_weights = (
             pd.read_csv('convert_data/geo_map/EMM_National.txt', sep = '\t')
+            .rename(columns = {"Total Population" : "population",
+                               "Population Weight" : "weight"})
             )
 
     emm_populaiton_weights.to_parquet("parquets/emm_populaiton_weights.parquet")
@@ -412,6 +414,10 @@ def d2p_ecm_results(df):
             MarketsSavingsOverall,
             FilterVariables,
             FinancialMetrics]
+
+################################################################################
+# emm_to_states
+
 
 ################################################################################
 #                                 End of File                                  #
