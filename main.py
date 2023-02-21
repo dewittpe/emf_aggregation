@@ -355,6 +355,7 @@ if __name__ == "__main__":
                 pd.concat([baseline_aggs, aggs])
                 .rename({"region":"Region"}, axis = 1)
                )
+        aggs.to_csv("emf_output/aggs.csv")
 
         # add model name and units columns
         aggs["Model"] = config.get("scoutversion")
@@ -401,7 +402,9 @@ if __name__ == "__main__":
                 .groupby(["Model", "Scenario", "year", "Variable", "Units", "State"])
                 .agg({"value":"sum"})
                 .reset_index()
+                .rename(columns = {"State":"Region"})
                 )
+        state_aggs.to_csv("emf_output/state_aggs.csv")
 
     with Timer("Translate to National results", verbose = verbose):
         national_aggs = (
@@ -411,18 +414,30 @@ if __name__ == "__main__":
                        left_on = 'Region',
                        right_on = 'EMM')
                 .drop("EMM", axis = 1)
-                .assign(Variable = lambda x: x.value * x.weight)
+                .assign(value = lambda x: x.value * x.weight)
                 .groupby(["Model", "Scenario", "year", "Variable", "Units"])
                 .agg({"value":"sum"})
                 .assign(Region = lambda x: 'United States')
                 .reset_index()
                 )
+        national_aggs.to_csv("emf_output/national_aggs.csv")
+
+    with Timer("Pivot State and National Data for IAMC"):
+        iamc = pd.concat([national_aggs, state_aggs])
+        iamc.to_csv("emf_output/IAMC_long.csv")
+
+        iamc = pd.pivot_table(iamc,
+                              values = "value",
+                              index = ["Model", "Scenario", "Region", "Variable", "Units"],
+                              columns = "year"
+                              )
+        iamc.to_csv("emf_output/IAMC_wide.csv")
 
     with Timer("Write to files", verbose = verbose):
         if not os.path.exists("emf_output"):
             os.makedirs("emf_output")
 
-        pd.concat([national_aggs, state_aggs]).to_excel("emf_output/IAMC_format.xlsx")
+        iamc.to_excel("emf_output/IAMC_format.xlsx")
 
 
 
