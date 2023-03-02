@@ -4,3 +4,4 @@ __pycache__/*
 *.log
 *.csv
 *.xlsx
+.DS_Store
