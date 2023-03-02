@@ -8,7 +8,7 @@ from scout_concepts import ScoutConcepts
 scout_concepts = ScoutConcepts()
 
 ################################################################################
-def json_to_df(path = None, data = None):
+def dict_to_df(path = None, data = None):
     """
     Function: json_to_df
 

@@ -12,6 +12,7 @@ ecm_results:
     file: ecm_results/ecm_results_2.json.gz
   - scenario: 0by50.BSG.Adv.R2
     file: ecm_results/ecm_results_3-1.json.gz
+emf_output_dir: ./emf_output
 
 
 

@@ -1,19 +1,12 @@
 import os, sys, getopt, itertools
 import yaml
 import pandas as pd
-from utilities import check_to_rebuild
-from utilities import json_to_df
+from utilities import dict_to_df
 from timer import Timer
-from dict_to_parquet import d2p_baseline
-from dict_to_parquet import d2p_floor_area
-from dict_to_parquet import d2p_emm_to_states
-from dict_to_parquet import d2p_emm_population_weights
-from dict_to_parquet import d2p_emm_region_emission_prices
-from dict_to_parquet import d2p_site_source_co2_conversion
-from dict_to_parquet import d2p_ecm_results
 from scout_emf_mappings import ScoutEMFMappings
 from scout_concepts import ScoutConcepts
 from scout_concepts import ScoutMappings
+from reads import *
 
 
 if __name__ == "__main__":
@@ -29,123 +22,51 @@ if __name__ == "__main__":
 
     # get arguments from the command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hv", ["help", "verbose", "config="])
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "verbose", "config="])
     except getopt.GetoptError:
         print("Usage: main.py -h for help")
         sys.exit(2)
 
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print("dash-test -r <ecm_results file> -p <ecm_prep file>")
             print("Options:")
-            print("  -h --help     Print this help and exit")
-            print("  -v --verbose  Print status messages")
-            print("  --config      User defined path to config.yml file")
+            print("  -h --help  Print this help and exit")
+            print("  --verbose  Print status messages")
+            print("  --config   User defined path to config.yml file")
             sys.exit()
         elif opt in ("--config"):
             config_path = arg
-        elif opt in ("-v", "--verbose"):
+        elif opt in ("--verbose"):
             verbose = True
 
     # import the config
     with open(config_path, 'r') as f:
         config = yaml.load(f, Loader = yaml.loader.SafeLoader)
 
+    # simple checks of the config file
+    if config.get("baseline") is None:
+        raise Exception("baseline key in config file is missing.")
+    if config.get("ecm_results") is None:
+        raise Exception("ecm_results key in config file is missing.")
+    if config.get("emf_output_dir") is None:
+        raise Exception("emf_output_dir key in config file is missing.")
+    else:
+        if not os.path.exists(config.get("emf_output_dir")):
+            os.makedirs(config.get("emf_output_dir"))
 
     # verify the parquets directory exists
     if not os.path.exists("parquets"):
         os.makedirs("parquets")
 
-    # check if parquets need to be rebuilt, if so do so, else, just read the
-    # parquets
-
-    # supporting data
-    trgts = ['parquets/emm_to_states.parquet']
-    prqts = ['convert_data/geo_map/EMM_State_RowSums.txt', 'dict_to_parquet.py']
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting EMM states", verbose = verbose):
-            emm_to_states = d2p_emm_to_states()
-    else:
-        with Timer("Reading " + trgts[0], verbose = verbose):
-            emm_to_states = pd.read_parquet(trgts[0])
-
-    trgts = ['parquets/emm_population_weights.parquet']
-    prqts = ['convert_data/geo_map/EMM_National.txt', 'dict_to_parquet.py']
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting EMM Population Weights", verbose = verbose):
-            emm_population_weights = d2p_emm_population_weights()
-    else:
-        with Timer("Reading " + trgts[0], verbose = verbose):
-            emm_population_weights = pd.read_parquet(trgts[0])
-
-    # the following contains both the
-    # co2_intensity_of_electricity and end_use_electricity_price
-    trgts = ['parquets/emm_region_emissions_prices.parquet']
-    prqts = ['convert_data/emm_region_emissions_prices.json.gz', 'dict_to_parquet.py']
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting EMM Region Emission Prices", verbose = verbose):
-            emm_region_emissions_prices = d2p_emm_region_emission_prices()
-    else:
-        with Timer("Reading " + trgts[0], verbose = verbose):
-            emm_region_emissions_prices = pd.read_parquet(trgts[0])
-
-    trgts = ['parquets/site_source_co2_conversions.parquet']
-    prqts = ['convert_data/site_source_co2_conversions.json.gz', 'dict_to_parquet.py']
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting Site Source CO2 Conversions", verbose = verbose):
-            site_source_co2_conversions = d2p_site_source_co2_conversion()
-    else:
-        with Timer("Reading " + trgts[0], verbose = verbose):
-            site_source_co2_conversions = pd.read_parquet(trgts[0])
-
-    # baseline data as defined in the config file
-    # Pre-process baseline data.
-    if config.get("baseline") is None:
-        raise Exception("baseline key in config file is missing.")
-
-    trgts = ["parquets/baseline.parquet", "parquets/floor_area.parquet"]
-    prqts = [b.get('file') for b in config.get('baseline')]
-    prqts.extend(['dict_to_parquet.py', config_path])
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting baseline and floor area data", verbose = verbose):
-            f = [b.get('file') for b in config.get('baseline')]
-            s = [b.get('scenario') for b in config.get('baseline')]
-            DFs = [json_to_df(path = p) for p in f]
-            baseline = [d2p_baseline(df, s) for df, s in zip(DFs, s)]
-            baseline = pd.concat(baseline)
-            baseline.to_parquet('parquets/baseline.parquet')
-            floor_area = [d2p_floor_area(df, s) for df, s in zip(DFs, s)]
-            floor_area = pd.concat(floor_area)
-            floor_area.to_parquet('parquets/floor_area.parquet')
-    else:
-        with Timer("Reading in baseline and floor_area parquets", verbose = verbose):
-            baseline = pd.read_parquet('parquets/baseline.parquet')
-            floor_area = pd.read_parquet('parquets/floor_area.parquet')
-
-    # Results Data
-    # Pre-process baseline data.
-    if config.get("ecm_results") is None:
-        raise Exception("ecm_results key in config file is missing.")
-
-    trgts = ['parquets/OnSiteGenerationByCategory.parquet',
-             'parquets/OnSiteGenerationOverall.parquet',
-             'parquets/MarketsSavingsByCategory.parquet',
-             'parquets/MarketsSavingsOverall.parquet',
-             'parquets/FilterVariables.parquet',
-             'parquets/FinancialMetrics.parquet']
-    prqts = [b.get('file') for b in config.get('ecm_results')]
-    prqts.extend(['dict_to_parquet.py', config_path])
-    if check_to_rebuild(trgts, prqts):
-        with Timer("Formatting results data", verbose = verbose):
-            f = [b.get('file') for b in config.get('ecm_results')]
-            s = [b.get('scenario') for b in config.get('ecm_results')]
-            DFs = [json_to_df(path = p) for p in f]
-            DF = pd.concat(DFs, keys = s)
-            DF = DF.reset_index(level = 0, names = ["Scenario"])
-            d2p_ecm_results(DF)
-    
-    with Timer("Reading in MarketsSavingsByCategory", verbose = verbose):
-        MarketsSavingsByCategory = pd.read_parquet("parquets/MarketsSavingsByCategory.parquet")
+    # Data Imports
+    # These call will check if parquets need to be rebuilt, if so do so, else,
+    # just read the parquets
+    emm_to_states = read_emm_to_states(verbose)
+    emm_population_weights = read_emm_population_weights(verbose)
+    emm_region_emissions_prices = read_emm_region_emission_prices(verbose)
+    site_source_co2_conversions = read_site_source_co2_conversions(verbose)
+    baseline, floor_area = read_baseline_and_floor_area(config_path, config, verbose)
+    OnSiteGenerationByCategory, OnSiteGenerationOverall, MarketsSavingsByCategory, MarketsSavingsOverall, FilterVariables, FinancialMetrics = read_results(config_path, config, verbose)
 
     # Prepare the data for aggregation
     with Timer("Prepare Data For Aggregation", verbose = verbose):
@@ -160,6 +81,8 @@ if __name__ == "__main__":
         # baseline
         baseline = (
                 baseline
+                .query('(supply_demand.isna()) | (supply_demand == "supply")')
+                .query('energy_stock == "energy"')
                 .merge(scout_mappings.building_type_class)
                 .merge(scout_emf_mappings.emf_end_uses,
                        how = 'left',
@@ -212,6 +135,8 @@ if __name__ == "__main__":
                 baseline.CO2_intensity_of_electricity
             )
 
+        baseline.to_csv(os.path.join(config.get('emf_output_dir'),"baseline.csv"))
+
         ##########
         # results
         MarketsSavingsByCategory = (
@@ -240,8 +165,9 @@ if __name__ == "__main__":
 
         idx = MarketsSavingsByCategory.query('outcome_metric.str.contains("MMBtu")').index
         MarketsSavingsByCategory.loc[idx, "value"] *= scout_emf_mappings.MMBtu_to_EJ
-        MarketsSavingsByCategory.outcome_metric = (
+        MarketsSavingsByCategory.loc[idx, "outcome_metric"] = (
                 MarketsSavingsByCategory
+                .loc[idx]
                 .outcome_metric
                 .str.replace("MMBtu", "EJ")
                 )
@@ -297,6 +223,7 @@ if __name__ == "__main__":
                 .str.replace("\|{2,}", "|", regex = True)
                 .str.replace("\|$", "", regex = True)
                 )
+        baseline_aggs.to_csv(os.path.join(config.get('emf_output_dir'), "baseline_aggs.csv"))
 
     with Timer("Aggregate MarketsSavingsByCategory for EMF Summary", verbose = verbose):
         querys_groups = [
@@ -355,7 +282,6 @@ if __name__ == "__main__":
                 pd.concat([baseline_aggs, aggs])
                 .rename({"region":"Region"}, axis = 1)
                )
-        aggs.to_csv("emf_output/aggs.csv")
 
         # add model name and units columns
         aggs["Model"] = config.get("scoutversion")
@@ -398,13 +324,13 @@ if __name__ == "__main__":
                        left_on = 'Region',
                        right_on = 'EMM')
                 .drop("EMM", axis = 1)
-                .assign(value = lambda x : x.value * x.emm_to_state_factor)
+                .assign(value = lambda x : x.value * x.emm_to_state_factor * x.weight)
                 .groupby(["Model", "Scenario", "year", "Variable", "Units", "State"])
                 .agg({"value":"sum"})
                 .reset_index()
                 .rename(columns = {"State":"Region"})
                 )
-        state_aggs.to_csv("emf_output/state_aggs.csv")
+        state_aggs.to_csv(os.path.join(config.get("emf_output_dir"), "state_aggs.csv"))
 
     with Timer("Translate to National results", verbose = verbose):
         national_aggs = (
@@ -420,24 +346,21 @@ if __name__ == "__main__":
                 .assign(Region = lambda x: 'United States')
                 .reset_index()
                 )
-        national_aggs.to_csv("emf_output/national_aggs.csv")
+        national_aggs.to_csv(os.path.join(config.get("emf_output_dir"), "national_aggs.csv"))
 
     with Timer("Pivot State and National Data for IAMC"):
         iamc = pd.concat([national_aggs, state_aggs])
-        iamc.to_csv("emf_output/IAMC_long.csv")
+        iamc.to_csv(os.path.join(config.get("emf_output_dir"), "IAMC_long.csv"))
 
         iamc = pd.pivot_table(iamc,
                               values = "value",
                               index = ["Model", "Scenario", "Region", "Variable", "Units"],
                               columns = "year"
                               )
-        iamc.to_csv("emf_output/IAMC_wide.csv")
+        iamc.to_csv(os.path.join(config.get("emf_output_dir"), "IAMC_wide.csv"))
 
-    with Timer("Write to files", verbose = verbose):
-        if not os.path.exists("emf_output"):
-            os.makedirs("emf_output")
-
-        iamc.to_excel("emf_output/IAMC_format.xlsx")
+    with Timer("Write Excel files", verbose = verbose):
+        iamc.to_excel(os.path.join(config.get("emf_output_dir"), "IAMC_format.xlsx"))
 
 
 

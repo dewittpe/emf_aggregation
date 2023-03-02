@@ -4,7 +4,7 @@
 # dict than json, into pandas DataFrames.
 
 import pandas as pd
-from utilities import json_to_df
+from utilities import dict_to_df
 from utilities import isfloat
 from utilities import remove_empty_colums
 from scout_concepts import ScoutConcepts
@@ -14,7 +14,7 @@ def d2p_baseline(df, scenario):
     """ Dict to Parquet: Baseline Data
 
     Args:
-        df a DataFrame returned from a calling json_to_df
+        df a DataFrame returned from a calling dict_to_df
         scenario
 
     Return:
@@ -156,7 +156,7 @@ def d2p_emm_population_weights():
 
 ################################################################################
 def d2p_emm_region_emission_prices():
-    df = json_to_df(path = 'convert_data/emm_region_emissions_prices.json.gz')
+    df = dict_to_df(path = 'convert_data/emm_region_emissions_prices.json.gz')
     df = (
             df
             .query('lvl1 == "data"')
@@ -204,7 +204,7 @@ def d2p_emm_region_emission_prices():
 
 ################################################################################
 def d2p_site_source_co2_conversion():
-    df = json_to_df(path = 'convert_data/site_source_co2_conversions.json')
+    df = dict_to_df(path = 'convert_data/site_source_co2_conversions.json.gz')
 
     df = (
             df
@@ -408,12 +408,14 @@ def d2p_ecm_results(df):
     FilterVariables.to_parquet('parquets/FilterVariables.parquet')
     FinancialMetrics.to_parquet('parquets/FinancialMetrics.parquet')
 
-    return [OnSiteGenerationByCategory,
-            OnSiteGenerationOverall,
-            MarketsSavingsByCategory,
-            MarketsSavingsOverall,
-            FilterVariables,
-            FinancialMetrics]
+    return [
+               OnSiteGenerationByCategory,
+               OnSiteGenerationOverall,
+               MarketsSavingsByCategory,
+               MarketsSavingsOverall,
+               FilterVariables,
+               FinancialMetrics
+            ]
 
 ################################################################################
 # emm_to_states
