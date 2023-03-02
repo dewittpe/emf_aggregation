@@ -363,4 +363,5 @@ if __name__ == "__main__":
         iamc.to_csv(os.path.join(config.get("emf_output_dir"), "IAMC_wide.csv"))
 
     with Timer("Write Excel files", verbose = verbose):
-        iamc.to_excel(os.path.join(config.get("emf_output_dir"), "IAMC_format.xlsx"))
+        iamc.to_excel(os.path.join(config.get("emf_output_dir"), "IAMC_format_good_for_human.xlsx"))
+        iamc.reset_index().to_excel(os.path.join(config.get("emf_output_dir"), "IAMC_format.xlsx"))
