@@ -33,3 +33,7 @@ python main.py --config <path>
 
 The `emf_output_dir` specified in the `config.yml` will be created, if needed,
 by `main.py`.
+
+## TODOs:
+The abbility to specify specific conversion factors for CO2 by specifying a file
+path is hinted at in `config.yml` but is not currently implimented.
