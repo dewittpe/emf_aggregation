@@ -35,5 +35,9 @@ The `emf_output_dir` specified in the `config.yml` will be created, if needed,
 by `main.py`.
 
 ## TODOs:
-The abbility to specify specific conversion factors for CO2 by specifying a file
-path is hinted at in `config.yml` but is not currently implimented.
+
+* The abbility to specify specific conversion factors for CO2 by specifying a
+  file path is hinted at in `config.yml` but is not currently implimented.
+
+* Years to report is currently hard code as mod 5 years.  It would be preferable
+  to make the years to report part of the `config.yml` file
