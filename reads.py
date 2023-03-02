@@ -1,4 +1,5 @@
 import pandas as pd
+from utilities import dict_to_df
 from utilities import check_to_rebuild
 from dict_to_parquet import d2p_baseline
 from dict_to_parquet import d2p_floor_area
