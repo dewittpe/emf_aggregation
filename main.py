@@ -285,25 +285,39 @@ if __name__ == "__main__":
     baseline_agg = aggregate_baseline(baseline, verbose)
     results_agg  = aggregate_results(results, verbose)
 
+    with Timer("Writting out intermediate files for dev work", verbose = True):
+        baseline_agg.reset_index().to_csv(
+                os.path.join(config.get('emf_output_dir'), 'baseline_agg.csv')
+                , index = False
+                )
+        results_agg.reset_index().to_csv(
+                os.path.join(config.get('emf_output_dir'), 'results_agg.csv')
+                , index = False
+                )
+
     with Timer("Clean up Aggregated Results", verbose = verbose):
         aggs = pd.concat([baseline_agg, results_agg]).rename({"region":"Region"}, axis = 1)
 
         # add model name and units columns
         aggs["Model"] = config.get("scoutversion")
         # for units, set all rows to the units for 'Final Energy' and then correct the
-        # needed rows for 'Emmissions'
+        # needed rows for 'Emissions'
         aggs["Units"] = "EJ/yr"
-        idx = aggs.query("Variable.str.contains('Emmissions')").index
-        aggs.loc[idx, "Units"] = "Mt CO2\yr"
+        idx = aggs.query("Variable.str.contains('Emissions')").index
+        aggs.loc[idx, "Units"] = "Mt CO2/yr"
 
         # Remove extraneous rows from baseline and modify CO2 emissions
         # to report direct emissions without the 'Direct' tag (and drop
         # the total direct + indirect emissions values)
         totco2_regex = '^Emissions\|.*\|(?:Direct|Indirect)$|^(?!Emissions).*'
+        eu_regex = '^Final Energy\|Buildings\|.*\|(?:Appliances|Cooling|Heating)$'
         aggs = (
             aggs
-            .query('~((Scenario == "NT.Ref.R2") & Variable.str.contains(@totco2_regex, regex = True))')
-            .query('~((Scenario == "NT.Ref.R2") & Variable.str.endswith("|Cooling|Gas"))')
+            #.query('~((Scenario == "NT.Ref.R2") & Variable.str.contains(@totco2_regex, regex = True))')
+            #.query('~((Scenario == "NT.Ref.R2") & Variable.str.endswith("|Cooling|Gas"))')
+            .query('~(Variable.str.contains(@totco2_regex, regex = True))')
+            .query('~(Variable.str.endswith("|Cooling|Gas"))')
+            .query('~(Variable.str.contains(@eu_regex, regex = True))')
             )
 
         idx = aggs.query('Scenario == "NT.Ref.R2"').index
@@ -322,12 +336,7 @@ if __name__ == "__main__":
                        left_on = 'Region',
                        right_on = 'EMM')
                 .drop("EMM", axis = 1)
-                .merge(emm_population_weights,
-                       how = 'left',
-                       left_on = 'Region',
-                       right_on = 'EMM')
-                .drop("EMM", axis = 1)
-                .assign(value = lambda x : x.value * x.emm_to_state_factor * x.weight)
+                .assign(value = lambda x : x.value * x.emm_to_state_factor)
                 .groupby(["Model", "Scenario", "year", "Variable", "Units", "State"])
                 .agg({"value":"sum"})
                 .reset_index()
